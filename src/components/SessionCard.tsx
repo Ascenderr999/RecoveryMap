@@ -1,11 +1,19 @@
 import { localize } from "../i18n";
 import { useState } from "react";
 import { Check, SkipForward, ClipboardList } from "lucide-react";
+import { profiles } from "../data/seed";
 import type { Session } from "../types";
 import { useRecovery } from "../hooks/useRecovery";
 export function SessionCard({ session: s }: { session: Session }) {
   const { update, saving, state } = useRecovery();
+  const future = s.day > (profiles.find((p) => p.id === s.profileId)?.day ?? 0);
   const sourcePlan = state.plans?.find((plan) => plan.id === s.planId);
+  const [fatigueRecorded, setFatigueRecorded] = useState(
+      Boolean(s.fatigueRecorded),
+    ),
+    [discomfortRecorded, setDiscomfortRecorded] = useState(
+      Boolean(s.discomfortRecorded),
+    );
   const [notes, setNotes] = useState(s.notes),
     [fatigue, setFatigue] = useState(s.fatigue),
     [discomfort, setDiscomfort] = useState(s.discomfort),
@@ -14,7 +22,18 @@ export function SessionCard({ session: s }: { session: Session }) {
     const ok = await update((state) => ({
       ...state,
       sessions: state.sessions.map((row) =>
-        row.id === s.id ? { ...row, status, notes, fatigue, discomfort } : row,
+        row.id === s.id
+          ? {
+              ...row,
+              status,
+              notes,
+              fatigue,
+              discomfort,
+              fatigueRecorded,
+              discomfortRecorded,
+              recordedAt: new Date().toISOString(),
+            }
+          : row,
       ),
     }));
     setSaved(ok ? "Saved locally" : "Not saved. Please try again.");
@@ -64,9 +83,10 @@ export function SessionCard({ session: s }: { session: Session }) {
             max="10"
             step="1"
             value={fatigue}
-            onChange={(e) =>
+            onChange={(e) => (
+              setFatigueRecorded(true),
               setFatigue(Math.max(0, Math.min(10, Number(e.target.value))))
-            }
+            )}
           />
         </label>
         <label>
@@ -77,9 +97,10 @@ export function SessionCard({ session: s }: { session: Session }) {
             max="10"
             step="1"
             value={discomfort}
-            onChange={(e) =>
+            onChange={(e) => (
+              setDiscomfortRecorded(true),
               setDiscomfort(Math.max(0, Math.min(10, Number(e.target.value))))
-            }
+            )}
           />
         </label>
       </div>
@@ -87,7 +108,10 @@ export function SessionCard({ session: s }: { session: Session }) {
         <button
           className="button primary"
           disabled={
-            saving || !Number.isFinite(fatigue) || !Number.isFinite(discomfort)
+            saving ||
+            future ||
+            !Number.isFinite(fatigue) ||
+            !Number.isFinite(discomfort)
           }
           onClick={() => void save("completed")}
         >
@@ -96,7 +120,7 @@ export function SessionCard({ session: s }: { session: Session }) {
         </button>
         <button
           className="button"
-          disabled={saving}
+          disabled={saving || future}
           onClick={() => void save("skipped")}
         >
           <SkipForward size={15} />

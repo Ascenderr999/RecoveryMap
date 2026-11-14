@@ -47,7 +47,7 @@ function Pages() {
             element={<Assessment key={state.selectedProfile} />}
           />
           <Route path="gap" element={<Gap />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="reports" element={<Reports key={state.selectedProfile} />} />
           <Route
             path="library"
             element={<Navigate to="/plan?tab=library" replace />}

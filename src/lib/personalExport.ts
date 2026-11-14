@@ -1,4 +1,75 @@
-import type {Assessment} from '../types';
-import {metricInfo} from '../data/seed';
-import {baselineFor,performance,personalCompatible} from './calculations';
-export function personalAssessmentCSV(allRows:readonly Assessment[],profileId:string){const rows=allRows.filter(r=>r.profileId===profileId);const q=(v:unknown)=>'"'+(typeof v==='string'?v.replace(/^[=+@-]/,m=>"'"+m):String(v??'')).replace(/"/g,'""')+'"';return [['sourceType','profileId','sourceRowId','metric','unit','value','date','session','protocol','environment','isBaseline','baselineMethod','baselineValue','baselineRatioPct','calculation','comparisonUnavailableReason','notes'],...rows.map(a=>{const base=baselineFor(rows,a.metric),ok=personalCompatible(a,base);return [a.id.includes('-manual-')?'manual_entry':'synthetic_demo',profileId,a.id,a.metric,metricInfo[a.metric].unit,a.value,a.date,'',a.protocol??'standard',a.environment??'Personal demo / unspecified gravity',Boolean(a.baseline),base?.id.includes('-manual-')?'Individual manual baseline':'Synthetic pre-mission reference',base?.value??'',ok&&base?performance(a.value,base.value,metricInfo[a.metric].higher):'',metricInfo[a.metric].higher?'100*current/baseline':'100*baseline/current',ok?'':'Missing or incompatible personal baseline',a.notes??''];})].map(row=>row.map(q).join(',')).join('\n');}
+import { protocolLabel } from "./assessmentWorkflow";
+import type { Assessment } from "../types";
+import { metricInfo } from "../data/seed";
+import { baselineFor, performance, personalCompatible } from "./calculations";
+export function personalAssessmentCSV(
+  allRows: readonly Assessment[],
+  profileId: string,
+  onlyIds?: readonly string[],
+) {
+  const rows = allRows.filter((r) => r.profileId === profileId);
+  const q = (v: unknown) =>
+    '"' +
+    (typeof v === "string"
+      ? v.replace(/^[=+@-]/, (m) => "'" + m)
+      : String(v ?? "")
+    ).replace(/"/g, '""') +
+    '"';
+  return [
+    [
+      "sourceType",
+      "profileId",
+      "sourceRowId",
+      "sourceName",
+      "metric",
+      "unit",
+      "value",
+      "date",
+      "session",
+      "protocol",
+      "environment",
+      "isBaseline",
+      "baselineMethod",
+      "baselineValue",
+      "baselineRatioPct",
+      "calculation",
+      "comparisonUnavailableReason",
+      "notes",
+    ],
+    ...rows
+      .filter((a) => !onlyIds || onlyIds.includes(a.id))
+      .map((a) => {
+        const base = baselineFor(rows, a.metric, a.date),
+          ok = personalCompatible(a, base);
+        return [
+          a.id.includes("-manual-") ? "manual_entry" : "synthetic_demo",
+          profileId,
+          a.id,
+          a.sourceName ??
+            (a.id.includes("-manual-") ? "Manual entry" : "Synthetic seed"),
+          a.metric,
+          metricInfo[a.metric].unit,
+          a.value,
+          a.date,
+          "",
+          protocolLabel(a.protocol),
+          a.environment ?? "Personal demo / unspecified gravity",
+          Boolean(a.baseline),
+          base?.id.includes("-manual-")
+            ? "Individual manual baseline"
+            : "Synthetic pre-mission reference",
+          base?.value ?? "",
+          ok && base
+            ? performance(a.value, base.value, metricInfo[a.metric].higher)
+            : "",
+          metricInfo[a.metric].higher
+            ? "100*current/baseline"
+            : "100*baseline/current",
+          ok ? "" : "Missing or incompatible personal baseline",
+          a.notes ?? "",
+        ];
+      }),
+  ]
+    .map((row) => row.map(q).join(","))
+    .join("\n");
+}

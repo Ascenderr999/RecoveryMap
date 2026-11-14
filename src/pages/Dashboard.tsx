@@ -5,7 +5,7 @@ import { TrajectoryChart } from "../components/Charts";
 import { fmt } from "../components/ui";
 import { performance } from "../lib/calculations";
 import { useResearch } from "../research/ResearchContext";
-import { ResearchDashboard } from "../research/ResearchViews";
+import { ResearchDashboard, ResearchSpotlight } from "../research/ResearchViews";
 export default function Dashboard() {
   const { selection } = useResearch();
   const { p, rows, sessions, latest, baseline, trend, update, saving } =
@@ -86,7 +86,7 @@ export default function Dashboard() {
           </div>
           <div className="statvalue">
             {localize(p.day)}
-            <small>{localize(" / 30 days")}</small>
+            <small> / {Math.max(p.day,...sessions.map(s=>s.day))} {localize("scheduled days")}</small>
           </div>
           <div className="trend neutral">
             {localize("Synthetic mission timeline")}
@@ -136,11 +136,12 @@ export default function Dashboard() {
             </small>
           </div>
           <div className="trend neutral">
-            {localize(today.length - done)}
-            {localize(" activities remaining")}
+            {localize(today.filter(s=>s.status==="scheduled").length)}
+            {localize(" pending activities")}
           </div>
         </div>
       </div>
+      <ResearchSpotlight />
       <div className="grid">
         <section className="card">
           <div className="cardhead">
@@ -185,7 +186,7 @@ export default function Dashboard() {
                     {s.planId ? s.dose : localize(s.dose)}
                   </p>
                 </div>
-                <span className="duration">{localize(s.category)}</span>
+                <span className="duration">{localize(s.status)} · {localize(s.category)}</span>
                 <button
                   className={`circle ${s.status === "completed" ? "done" : ""}`}
                   disabled={saving}
@@ -198,6 +199,7 @@ export default function Dashboard() {
                         row.id === s.id
                           ? {
                               ...row,
+                              recordedAt:new Date().toISOString(),
                               status:
                                 row.status === "completed"
                                   ? "scheduled"

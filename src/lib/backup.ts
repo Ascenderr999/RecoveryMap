@@ -18,6 +18,8 @@ export function parseBackup(text: string): DemoState {
   const ids = profiles.map((p) => p.id);
   const str = (x: unknown, max = 10000) =>
     typeof x === "string" && x.length <= max;
+  const stamp = (x: unknown) =>
+    x === undefined || (str(x, 40) && !Number.isNaN(Date.parse(String(x))));
   const validDay = (d: unknown) =>
     Number.isInteger(d) && Number(d) >= 1 && Number(d) <= 365;
   const date = (x: unknown) =>
@@ -46,6 +48,18 @@ export function parseBackup(text: string): DemoState {
         Number(a.value) <= 0 ||
         Number(a.value) > metricInfo[a.metric as keyof typeof metricInfo].max ||
         !date(a.date) ||
+        !stamp(a.supersededAt) ||
+        (a.sourceName !== undefined && !str(a.sourceName, 300)) ||
+        (a.changeHistory !== undefined &&
+          (!Array.isArray(a.changeHistory) ||
+            a.changeHistory.some(
+              (h: Record<string, unknown>) =>
+                !h ||
+                !stamp(h.changedAt) ||
+                !Number.isFinite(h.previousValue) ||
+                Number(h.previousValue) <= 0 ||
+                !date(h.previousDate),
+            ))) ||
         (a.baseline !== undefined && typeof a.baseline !== "boolean") ||
         (a.notes !== undefined && !str(a.notes)) ||
         (a.environment !== undefined &&
@@ -62,6 +76,12 @@ export function parseBackup(text: string): DemoState {
         !str(r.id, 300) ||
         !ids.includes(String(r.profileId)) ||
         !validDay(r.day) ||
+        !stamp(r.archivedAt) ||
+        !stamp(r.recordedAt) ||
+        (r.fatigueRecorded !== undefined &&
+          typeof r.fatigueRecorded !== "boolean") ||
+        (r.discomfortRecorded !== undefined &&
+          typeof r.discomfortRecorded !== "boolean") ||
         !["scheduled", "completed", "skipped"].includes(String(r.status)) ||
         !["exercise", "description", "dose", "category", "notes"].every((k) =>
           str(r[k]),
@@ -89,8 +109,16 @@ export function parseBackup(text: string): DemoState {
     for (const metric of Object.keys(metricInfo))
       if (
         s.assessments.filter(
-          (a: { profileId: string; metric: string; baseline?: boolean }) =>
-            a.profileId === p.id && a.metric === metric && a.baseline,
+          (a: {
+            profileId: string;
+            metric: string;
+            baseline?: boolean;
+            supersededAt?: string;
+          }) =>
+            a.profileId === p.id &&
+            a.metric === metric &&
+            a.baseline &&
+            !a.supersededAt,
         ).length !== 1
       )
         throw Error("Each profile requires one baseline for every metric.");
@@ -102,6 +130,20 @@ export function parseBackup(text: string): DemoState {
           !p ||
           !str(p.id, 200) ||
           !ids.includes(String(p.profileId)) ||
+          !stamp(p.activatedAt) ||
+          !stamp(p.archivedAt) ||
+          !stamp(p.reviewedAt) ||
+          (p.version !== undefined &&
+            (!Number.isInteger(p.version) || Number(p.version) < 1)) ||
+          (p.authorization !== undefined &&
+            (!(p.authorization as Record<string, unknown>) ||
+              (p.authorization as Record<string, unknown>).kind !==
+                "user-demo-confirmation" ||
+              (p.authorization as Record<string, unknown>)
+                .specialistVerified !== false ||
+              !stamp(
+                (p.authorization as Record<string, unknown>).confirmedAt,
+              ))) ||
           !["title", "author", "sourceName", "importedAt"].every((k) =>
             str(p[k]),
           ) ||
@@ -125,6 +167,11 @@ export function parseBackup(text: string): DemoState {
       ))
   )
     throw Error("Invalid plan records in backup.");
+  if (
+    new Set((s.plans ?? []).map((p: { id: string }) => p.id)).size !==
+    (s.plans ?? []).length
+  )
+    throw Error("Duplicate plan IDs in backup.");
   return {
     version: 1,
     selectedProfile: s.selectedProfile,

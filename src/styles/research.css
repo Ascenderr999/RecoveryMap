@@ -337,3 +337,11 @@ code {
     word-break: break-all;
   }
 }
+.report-filters {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:18px 0;}
+.report-filters label,.report-filters input,.report-filters select {min-width:0;width:100%;}
+.report-provenance {margin-top:24px;font-size:12px;color:var(--muted,#9aafc4);overflow-wrap:anywhere;}
+:focus-visible {outline:2px solid #73e4d2;outline-offset:4px;}
+.saved-plan {flex-wrap:wrap;overflow-wrap:anywhere;}
+.source-info,.hash-value {overflow-wrap:anywhere;}
+@media(max-width:600px){.report-filters{grid-template-columns:1fr}.toolbar{display:flex;flex-wrap:wrap;gap:10px}.toolbar button{max-width:100%;white-space:normal}.panel,.page{min-width:0}.mode-tabs button{white-space:normal} .source-summary strong{min-width:0}}
+@media print{.mode-bar,.mode-tabs,.report-filters,.toolbar,button,input[type=file]{display:none!important}.report-provenance{color:#222}.panel,.report-summary{break-inside:auto}.table-wrap{overflow:visible!important}table{font-size:9px;table-layout:fixed;width:100%}td,th{overflow-wrap:anywhere;white-space:normal!important}.report-provenance{display:block!important}}

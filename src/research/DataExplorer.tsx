@@ -2,19 +2,29 @@ import { useState } from "react";
 import { localize as t } from "../i18n";
 import { Panel } from "../components/ui";
 import { useResearch } from "./ResearchContext";
-import { ResearchLoading, ResearchObservationTable } from "./ResearchViews";
+import {
+  ResearchLoading,
+  ResearchObservationTable,
+  researchCSV,
+} from "./ResearchViews";
 import { BASELINE_METHOD, DATASET_URL, METADATA_URL } from "./model";
+import { download } from "../lib/backup";
 import { compareResearch } from "./calculations";
 export function DataExplorer() {
   const { dataset } = useResearch();
   const [participant, setParticipant] = useState("all"),
     [file, setFile] = useState("all"),
-    [page, setPage] = useState(0);
+    [page, setPage] = useState(0),
+    [group, setGroup] = useState("all"),
+    [session, setSession] = useState("all"),
+    [integrity, setIntegrity] = useState<Record<string, string>>({});
   if (!dataset) return <ResearchLoading />;
   const rows = dataset.observations.filter(
     (r) =>
       (participant === "all" || r.participantId === participant) &&
-      (file === "all" || r.sourceFile === file),
+      (file === "all" || r.sourceFile === file) &&
+      (group === "all" || r.group === group) &&
+      (session === "all" || r.session === session),
   );
   const complete = dataset.participantIds.filter(
     (id) => compareResearch(dataset.observations, id, "D").ok,
@@ -31,7 +41,16 @@ export function DataExplorer() {
             <small>{t("Participant IDs")}</small>
           </strong>
           <strong>
-            238 / 243<small>{t("Force / slalom rows")}</small>
+            {
+              dataset.observations.filter((r) => r.metric === "leg_force")
+                .length
+            }{" "}
+            /{" "}
+            {
+              dataset.observations.filter((r) => r.metric === "slalom_time")
+                .length
+            }
+            <small>{t("Force / slalom rows")}</small>
           </strong>
           <strong>
             {complete}
@@ -58,13 +77,47 @@ export function DataExplorer() {
           return (
             <Panel title={source.file} key={source.file} eyebrow="NASA CFT70">
               <p>
-                {source.rows} {t("rows")} · 9 {t("columns")} ·{" "}
-                {source.participants} {t("Participant IDs")}
+                {rr.length} {t("rows")} · 9 {t("columns")} ·{" "}
+                {new Set(rr.map((r) => r.participantId)).size}{" "}
+                {t("Participant IDs")}
               </p>
               <p>
                 {t("Missing source dates")}:{" "}
                 {rr.filter((r) => r.sourceDate === null).length}
               </p>
+              <p role="status">
+                {integrity[source.file] ??
+                  t("Hash not yet checked in this browser")}
+              </p>
+              <button
+                className="button"
+                onClick={async () => {
+                  try {
+                    const bytes = await (
+                      await fetch(`/data/cft70/raw/${source.file}`)
+                    ).arrayBuffer();
+                    const digest = await crypto.subtle.digest("SHA-256", bytes);
+                    const hash = Array.from(new Uint8Array(digest), (n) =>
+                      n.toString(16).padStart(2, "0"),
+                    ).join("");
+                    setIntegrity((prev) => ({
+                      ...prev,
+                      [source.file]: t(
+                        hash === source.sha256
+                          ? "SHA-256 matches bundled manifest"
+                          : "INTEGRITY FAILURE — do not use these records",
+                      ),
+                    }));
+                  } catch {
+                    setIntegrity((prev) => ({
+                      ...prev,
+                      [source.file]: t("NOT VERIFIED — hash check unavailable"),
+                    }));
+                  }
+                }}
+              >
+                {t("Verify bundled SHA-256")}
+              </button>
               <label>
                 SHA-256<code className="hash-value">{source.sha256}</code>
               </label>
@@ -162,6 +215,54 @@ export function DataExplorer() {
             </select>
           </label>
         </div>
+        <div className="form-row">
+          <label>
+            {t("Group label")}
+            <select
+              aria-label={t("Explorer group filter")}
+              value={group}
+              onChange={(e) => {
+                setGroup(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="all">{t("All groups")}</option>
+              {[...new Set(dataset.observations.map((r) => r.group))].map(
+                (g) => (
+                  <option key={g}>{g}</option>
+                ),
+              )}
+            </select>
+          </label>
+          <label>
+            {t("Session")}
+            <select
+              aria-label={t("Explorer session filter")}
+              value={session}
+              onChange={(e) => {
+                setSession(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="all">{t("All sessions")}</option>
+              {["A", "B", "C", "D", "E", "F", "G"].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <button
+          className="button"
+          onClick={() =>
+            download(
+              "cft70-filtered.csv",
+              researchCSV(rows, dataset.sources, session, dataset.observations),
+              "text/csv;charset=utf-8",
+            )
+          }
+        >
+          {t("Export filtered research CSV")}
+        </button>
         <ResearchObservationTable
           rows={rows.slice(page * 25, (page + 1) * 25)}
         />

@@ -10,7 +10,7 @@ export function useProfileData() {
   const ctx = useRecovery();
   const p = profiles.find((p) => p.id === ctx.state.selectedProfile)!;
   const rows = ctx.state.assessments.filter((a) => a.profileId === p.id);
-  const sessions = ctx.state.sessions.filter((s) => s.profileId === p.id);
+  const sessions = ctx.state.sessions.filter((s) => s.profileId === p.id && !s.archivedAt);
   return {
     ...ctx,
     p,

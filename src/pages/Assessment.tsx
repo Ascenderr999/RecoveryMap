@@ -6,12 +6,17 @@ import { PageTitle, Panel, fmt } from "../components/ui";
 import { AssessmentHistory } from "../components/AssessmentHistory";
 import { dateFor, metricInfo } from "../data/seed";
 import { validateAssessment } from "../lib/calculations";
+import { parseAssessmentCSV } from "../lib/assessmentImport";
+import type { Assessment as AssessmentRecord } from "../types";
+import { recordAssessment, protocolLabel } from "../lib/assessmentWorkflow";
 import type { Metric } from "../types";
 import { useResearch } from "../research/ResearchContext";
 import { ResearchObservations } from "../research/ResearchViews";
 export default function Assessment() {
   const { selection, setSelection } = useResearch();
   const { p, rows, baseline, update, saving } = useProfileData();
+  const [importRows, setImportRows] = useState<AssessmentRecord[]>([]),
+    [editing, setEditing] = useState<AssessmentRecord | null>(null);
   const [metric, setMetric] = useState<Metric>("strength"),
     [date, setDate] = useState(dateFor(p, p.day + 1)),
     [value, setValue] = useState(""),
@@ -20,7 +25,7 @@ export default function Assessment() {
   const [isBaseline, setIsBaseline] = useState(false),
     [notes, setNotes] = useState("");
   const [protocol, setProtocol] = useState(
-    baseline("strength")?.protocol ?? "standard",
+    baseline("strength")?.protocol ?? "",
   );
   const [environment, setEnvironment] = useState(
     baseline("strength")?.environment ?? "Personal demo / unspecified gravity",
@@ -37,35 +42,72 @@ export default function Assessment() {
       metric,
       isBaseline
         ? rows.filter((a) => !(a.metric === metric && a.baseline))
-        : rows,
+        : rows.filter((a) => a.id !== editing?.id),
     );
     setError(err);
     setMessage("");
     if (err) return;
+    if (
+      isBaseline &&
+      !window.confirm(
+        localize(
+          "Confirm baseline change? The previous baseline is retained in history; historical comparisons retain their dated baseline.",
+        ),
+      )
+    )
+      return;
+    const entry = {
+      id: `${p.id}-manual-${crypto.randomUUID()}`,
+      profileId: p.id,
+      date,
+      metric,
+      value: Number(value),
+      baseline: isBaseline,
+      notes,
+      protocol: protocol.trim(),
+      environment: environment.trim(),
+      sourceName: "Manual entry",
+    };
+    if (editing) {
+      if (
+        await update((s) => ({
+          ...s,
+          assessments: s.assessments.map((a) =>
+            a.id === editing.id
+              ? {
+                  ...entry,
+                  id: a.id,
+                  sourceName: a.sourceName,
+                  changeHistory: [
+                    ...(a.changeHistory ?? []),
+                    {
+                      changedAt: new Date().toISOString(),
+                      previousValue: a.value,
+                      previousDate: a.date,
+                      previousProtocol: a.protocol,
+                      previousEnvironment: a.environment,
+                    },
+                  ],
+                }
+              : a,
+          ),
+        }))
+      ) {
+        setEditing(null);
+        setValue("");
+        setMessage("Assessment revision saved; previous values retained.");
+      }
+      return;
+    }
+    try {
+      recordAssessment(rows, entry, isBaseline);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Invalid assessment");
+      return;
+    }
     const ok = await update((s) => ({
       ...s,
-      assessments: [
-        ...s.assessments.filter(
-          (a) =>
-            !(
-              isBaseline &&
-              a.profileId === p.id &&
-              a.metric === metric &&
-              a.baseline
-            ),
-        ),
-        {
-          id: `${p.id}-manual-${crypto.randomUUID()}`,
-          profileId: p.id,
-          date,
-          metric,
-          value: Number(value),
-          baseline: isBaseline,
-          notes,
-          protocol: protocol.trim(),
-          environment: environment.trim(),
-        },
-      ],
+      assessments: recordAssessment(s.assessments, entry, isBaseline),
     }));
     if (ok) {
       setValue("");
@@ -117,6 +159,62 @@ export default function Assessment() {
           "Manual measurement entry. Your browser is not connected to medical devices.",
         )}
       />
+      <Panel title={localize("Import manual observations · CSV")}>
+        <p>
+          {localize(
+            "Required columns: metric,value,unit,date,protocol,environment,notes. Metrics: strength, mobility, balance, coordination. Baselines require the separate confirmation form. Entire import is rejected if any row is invalid.",
+          )}
+        </p>
+        <input
+          type="file"
+          aria-label={localize("Import assessment CSV")}
+          accept=".csv"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            try {
+              setImportRows(
+                parseAssessmentCSV(await f.text(), p.id, rows, f.name),
+              );
+              setError("");
+            } catch (err) {
+              setImportRows([]);
+              setError(err instanceof Error ? err.message : "Import failed");
+            }
+            e.target.value = "";
+          }}
+        />
+        {importRows.length > 0 && (
+          <>
+            <p>
+              {importRows.length} {localize("reviewed observations ready")}
+            </p>
+            <AssessmentHistory
+              rows={importRows}
+              contextRows={[...rows, ...importRows]}
+            />
+            <button
+              className="button primary"
+              onClick={async () => {
+                if (
+                  await update((s) => ({
+                    ...s,
+                    assessments: [...s.assessments, ...importRows],
+                  }))
+                ) {
+                  setImportRows([]);
+                  setMessage("Assessment import saved locally.");
+                }
+              }}
+            >
+              {localize("Confirm and save observations")}
+            </button>
+            <button className="button" onClick={() => setImportRows([])}>
+              {localize("Cancel")}
+            </button>
+          </>
+        )}
+      </Panel>
       <div className="assessment-grid">
         <Panel
           title={localize("Record an assessment")}
@@ -124,6 +222,21 @@ export default function Assessment() {
           action={<ScanLine className="teal" size={20} />}
         >
           <form onSubmit={(e) => void submit(e)} noValidate>
+            {editing && (
+              <p>
+                {localize("Editing observation")}: {editing.id}{" "}
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setEditing(null);
+                    setValue("");
+                  }}
+                >
+                  {localize("Cancel")}
+                </button>
+              </p>
+            )}
             <label>
               {localize("Measurement type")}
               <select
@@ -135,7 +248,7 @@ export default function Assessment() {
                       "Personal demo / unspecified gravity",
                   );
                   setProtocol(
-                    baseline(e.target.value as Metric)?.protocol ?? "standard",
+                    baseline(e.target.value as Metric)?.protocol ?? "",
                   );
                   setError("");
                 }}
@@ -191,15 +304,17 @@ export default function Assessment() {
               <input
                 type="checkbox"
                 checked={isBaseline}
+                disabled={Boolean(editing)}
                 onChange={(e) => setIsBaseline(e.target.checked)}
               />
               {localize(
-                "Save as individual baseline (replaces this metric's existing baseline)",
+                "Save as individual baseline (archives the previous baseline)",
               )}
             </label>
             <label>
               {localize("Protocol identifier")}
               <input
+                placeholder={localize("PROTOCOL UNSPECIFIED")}
                 value={protocol}
                 maxLength={200}
                 onChange={(e) => setProtocol(e.target.value)}
@@ -253,7 +368,10 @@ export default function Assessment() {
                 <div key={m}>
                   <span>
                     {localize(metricInfo[m].label)}
-                    <small>{localize(baseline(m)?.date)}</small>
+                    <small>
+                      {localize(baseline(m)?.date)} ·{" "}
+                      {localize(protocolLabel(baseline(m)?.protocol))}
+                    </small>
                   </span>
                   <strong>
                     {localize(fmt(baseline(m)?.value))}{" "}
@@ -274,7 +392,21 @@ export default function Assessment() {
         title={localize("Assessment history")}
         eyebrow={localize(`${p.name.toUpperCase()} / ISOLATED PROFILE RECORDS`)}
       >
-        <AssessmentHistory rows={rows} />
+        <AssessmentHistory
+          rows={rows}
+          onEdit={(a) => {
+            setEditing(a);
+            setMetric(a.metric);
+            setDate(a.date);
+            setValue(String(a.value));
+            setProtocol(a.protocol ?? "");
+            setEnvironment(
+              a.environment ?? "Personal demo / unspecified gravity",
+            );
+            setNotes(a.notes ?? "");
+            setIsBaseline(false);
+          }}
+        />
       </Panel>
     </>
   );

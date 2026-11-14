@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ResponsiveContainer,
@@ -150,9 +151,21 @@ export function ResearchDashboard() {
           </div>
         </>
       ) : (
-        <><Panel title={t("Selected raw observations")}><ResearchObservationTable rows={dataset.observations.filter(r=>r.participantId===s.participantId&&r.session===s.session&&r.phase==="POST_TEST")}/></Panel><div className="notice">
-          {t("Comparison unavailable")}: {t(c.reason)}
-        </div></>
+        <>
+          <Panel title={t("Selected raw observations")}>
+            <ResearchObservationTable
+              rows={dataset.observations.filter(
+                (r) =>
+                  r.participantId === s.participantId &&
+                  r.session === s.session &&
+                  r.phase === "POST_TEST",
+              )}
+            />
+          </Panel>
+          <div className="notice">
+            {t("Comparison unavailable")}: {t(c.reason)}
+          </div>
+        </>
       )}
       <Panel title={t("Research and personal workflows stay separate")}>
         <p>
@@ -312,9 +325,21 @@ export function ResearchAnalysis() {
           </Panel>
         </>
       ) : (
-        <><Panel title={t('Selected raw observations')}><ResearchObservationTable rows={dataset.observations.filter(r=>r.participantId===s.participantId&&r.session===s.session&&r.phase==='POST_TEST')}/></Panel><div className="notice" role="status">
-          {t("Comparison unavailable")}: {t(c.reason)}
-        </div></>
+        <>
+          <Panel title={t("Selected raw observations")}>
+            <ResearchObservationTable
+              rows={dataset.observations.filter(
+                (r) =>
+                  r.participantId === s.participantId &&
+                  r.session === s.session &&
+                  r.phase === "POST_TEST",
+              )}
+            />
+          </Panel>
+          <div className="notice" role="status">
+            {t("Comparison unavailable")}: {t(c.reason)}
+          </div>
+        </>
       )}
       <div className="two-col">
         <Panel title={t("Recorded leg force")}>
@@ -431,6 +456,7 @@ export function researchCSV(
   rows: readonly ResearchObservation[],
   sources: readonly { file: string; url: string; sha256: string }[],
   selectedSession: string,
+  calculationRows: readonly ResearchObservation[] = rows,
 ) {
   const quote = (v: unknown) =>
     `"${(typeof v === "string" ? v.replace(/^[=+@-]/, (m) => "'" + m) : String(v ?? "")).replace(/"/g, '""')}"`;
@@ -469,8 +495,8 @@ export function researchCSV(
   return [
     header,
     ...rows.map((r) => {
-      const base = baselineBC(rows, r.participantId, r.metric),
-        c = compareResearch(rows, r.participantId, r.session),
+      const base = baselineBC(calculationRows, r.participantId, r.metric),
+        c = compareResearch(calculationRows, r.participantId, r.session),
         src = sources.find((s) => s.file === r.sourceFile);
       return [
         r.source,
@@ -512,11 +538,15 @@ export function researchCSV(
 export function ResearchReports() {
   const { dataset, selection: s } = useResearch();
   const [query, setQuery] = useSearchParams();
+  const [reportSession, setReportSession] = useState("all"),
+    [exportError, setExportError] = useState("");
   const tab = query.get("tab") === "history" ? "history" : "summary";
   const setTab = (tab: string) => setQuery({ tab });
   if (!dataset) return <ResearchLoading />;
   const rows = dataset.observations.filter(
-      (r) => r.participantId === s.participantId,
+      (r) =>
+        r.participantId === s.participantId &&
+        (reportSession === "all" || r.session === reportSession),
     ),
     c = compareResearch(dataset.observations, s.participantId, s.session);
   return (
@@ -531,13 +561,68 @@ export function ResearchReports() {
           </button>
         }
       />
+      <label className="report-filters">
+        {t("Observation session filter")}
+        <select
+          value={reportSession}
+          onChange={(e) => setReportSession(e.target.value)}
+        >
+          <option value="all">{t("All sessions")}</option>
+          {["A", "B", "C", "D", "E", "F", "G"].map((v) => (
+            <option key={v}>{v}</option>
+          ))}
+        </select>
+      </label>
       <div className="toolbar">
+        <button
+          className="button primary"
+          onClick={async () => {
+            try {
+              setExportError("");
+              const { downloadReportPDF } = await import("../lib/pdfReport");
+              await downloadReportPDF(
+                [
+                  "RecoveryMap / RANGERS / NASA CFT70",
+                  t("Real NASA Earth-analog data"),
+                  `Participant ${s.participantId}; selected comparison POST ${s.session}; observation filter ${reportSession}`,
+                  `Exported ${new Date().toISOString()}`,
+                  BASELINE_METHOD,
+                  c.ok
+                    ? `Force ${c.force.value} N / baseline ${c.baselineForce} N; slalom ${c.time.value} s / baseline ${c.baselineTime} s; force change ${c.forceChangePct}%; raw time change ${c.timeChangePct}%; relative inverse-time performance change ${c.mobilityPerformanceChangePct}%; signed gap ${c.gapPercentagePoints} pp`
+                    : c.reason,
+                  "Selected comparison follows the shared POST selection; observation filter applies to the table and exports. It does not redefine B/C baselines.",
+                  "No prescriptions, adherence, symptoms, diagnosis, clinical score or Mars/in-flight validation.",
+                  ...rows.map(
+                    (r) =>
+                      `${r.participantId} / ${r.phase} / ${r.session} / BR_Day ${r.brDay} / ${r.metric} ${r.value} ${r.unit} / date ${r.sourceDate ?? "MISSING"} / ${r.sourceFile} / row ${r.sourceRowId} / ${r.protocol} / ${r.environment}`,
+                  ),
+                  DATASET_URL,
+                  ...dataset.sources.map(
+                    (src) => `${src.file} / SHA256 ${src.sha256} / ${src.url}`,
+                  ),
+                ],
+                `cft70-${s.participantId}.pdf`,
+              );
+            } catch {
+              setExportError(
+                "PDF generation failed. Use Print summary or reconnect once to cache the report font.",
+              );
+            }
+          }}
+        >
+          {t("Download PDF report")}
+        </button>
         <button
           className="button"
           onClick={() =>
             download(
               `cft70-${s.participantId}.csv`,
-              researchCSV(rows, dataset.sources, s.session),
+              researchCSV(
+                rows,
+                dataset.sources,
+                s.session,
+                dataset.observations,
+              ),
               "text/csv;charset=utf-8",
             )
           }
@@ -551,6 +636,8 @@ export function ResearchReports() {
               `cft70-${s.participantId}.json`,
               JSON.stringify(
                 {
+                  generatedAt: new Date().toISOString(),
+                  sessionFilter: reportSession,
                   source: "NASA_CFT70",
                   participantId: s.participantId,
                   selectedSession: s.session,
@@ -569,6 +656,12 @@ export function ResearchReports() {
           {t("Export research report · JSON")}
         </button>
       </div>
+      {exportError && <p role="alert">{t(exportError)}</p>}
+      <p>
+        {t(
+          "Observation filters do not redefine B/C baselines. The comparison uses the shared selected POST session.",
+        )}
+      </p>
       <div className="mode-tabs secondary-tabs">
         <button
           aria-pressed={tab === "summary"}
@@ -585,9 +678,21 @@ export function ResearchReports() {
       </div>
       {tab === "summary" && c.ok && <ComparisonSummary c={c} />}
       {!c.ok && (
-        <><Panel title={t("Selected raw observations")}><ResearchObservationTable rows={dataset.observations.filter(r=>r.participantId===s.participantId&&r.session===s.session&&r.phase==="POST_TEST")}/></Panel><div className="notice">
-          {t("Comparison unavailable")}: {t(c.reason)}
-        </div></>
+        <>
+          <Panel title={t("Selected raw observations")}>
+            <ResearchObservationTable
+              rows={dataset.observations.filter(
+                (r) =>
+                  r.participantId === s.participantId &&
+                  r.session === s.session &&
+                  r.phase === "POST_TEST",
+              )}
+            />
+          </Panel>
+          <div className="notice">
+            {t("Comparison unavailable")}: {t(c.reason)}
+          </div>
+        </>
       )}
       <Panel title={t("Recorded observations and provenance")}>
         <ResearchObservationTable rows={rows} />
@@ -617,5 +722,54 @@ export function ResearchReports() {
       </Panel>
       <ResearchLimits />
     </>
+  );
+}
+
+export function ResearchSpotlight() {
+  const { dataset, selection, setSelection } = useResearch();
+  if (!dataset)
+    return (
+      <Panel title={t("CFT70 Research Spotlight")}>
+        <p>{t("Research data loading / NOT VERIFIED until available")}</p>
+      </Panel>
+    );
+  const c = compareResearch(
+    dataset.observations,
+    selection.participantId,
+    selection.session,
+  );
+  return (
+    <Panel
+      title={t("CFT70 Research Spotlight")}
+      eyebrow={t("REAL NASA EARTH-ANALOG DATA")}
+    >
+      <p>
+        {t(
+          "Separate supporting research; these are not this fictional astronaut’s records.",
+        )}
+      </p>
+      {c.ok ? (
+        <p>
+          ID {c.participantId} / POST {c.session}: {c.force.value} N /{" "}
+          {c.time.value} s. {t("B/C baseline")}: {c.baselineForce} N /{" "}
+          {c.baselineTime} s. {t("Descriptive divergence")}:{" "}
+          {c.gapPercentagePoints.toFixed(2)} pp.
+        </p>
+      ) : (
+        <p>
+          {t("Comparison unavailable")}: {t(c.reason)}
+        </p>
+      )}
+      <p>
+        {t("Source")}: force.csv / {c.ok ? c.force.sourceRowId : "—"};
+        slalom.csv / {c.ok ? c.time.sourceRowId : "—"}. {t(BASELINE_METHOD)}
+      </p>
+      <button
+        className="button"
+        onClick={() => setSelection({ mode: "research" })}
+      >
+        {t("Open NASA research replay")}
+      </button>
+    </Panel>
   );
 }

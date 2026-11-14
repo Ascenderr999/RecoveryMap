@@ -9,6 +9,15 @@ export interface Assessment {
   notes?: string;
   protocol?: string;
   environment?: string;
+  supersededAt?: string;
+  sourceName?: string;
+  changeHistory?: {
+    changedAt: string;
+    previousValue: number;
+    previousDate: string;
+    previousProtocol?: string;
+    previousEnvironment?: string;
+  }[];
 }
 export interface Profile {
   id: string;
@@ -37,6 +46,10 @@ export interface Session {
   fatigue: number;
   discomfort: number;
   planId?: string;
+  archivedAt?: string;
+  recordedAt?: string;
+  fatigueRecorded?: boolean;
+  discomfortRecorded?: boolean;
 }
 export interface PlanActivity {
   id: string;
@@ -48,6 +61,8 @@ export interface PlanActivity {
   frequency: string;
   schedule: string;
   notes: string;
+  category?: string;
+  sourceReference?: string;
 }
 export interface RecoveryPlan {
   id: string;
@@ -57,6 +72,16 @@ export interface RecoveryPlan {
   sourceName: string;
   importedAt: string;
   activities: PlanActivity[];
+  version?: number;
+  reviewedAt?: string;
+  previousVersionId?: string;
+  activatedAt?: string;
+  archivedAt?: string;
+  authorization?: {
+    confirmedAt: string;
+    kind: "user-demo-confirmation";
+    specialistVerified: false;
+  };
 }
 export interface DemoState {
   version: number;

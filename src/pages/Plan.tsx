@@ -9,11 +9,26 @@ import Library from "./Library";
 import { useResearch } from "../research/ResearchContext";
 import { ResearchUnavailable } from "../research/ModeBar";
 export default function Plan() {
-  const { p, sessions, stats } = useProfileData();
+  const { p, sessions, stats, state } = useProfileData();
+  const activePlan = state.plans?.find(
+    (v) => v.profileId === p.id && v.activatedAt && !v.archivedAt,
+  );
   const [day, setDay] = useState(p.day);
   const { selection } = useResearch();
   const [query, setQuery] = useSearchParams();
-  if (selection.mode === "research") return <><PageTitle title={localize('Recovery Plan')} label={localize('READ-ONLY RESEARCH')} description={localize('No participant recovery plan is present in these NASA files.')}/><ResearchUnavailable/></>;
+  if (selection.mode === "research")
+    return (
+      <>
+        <PageTitle
+          title={localize("Recovery Plan")}
+          label={localize("READ-ONLY RESEARCH")}
+          description={localize(
+            "No participant recovery plan is present in these NASA files.",
+          )}
+        />
+        <ResearchUnavailable />
+      </>
+    );
   const tabs = (
     <div className="mode-tabs secondary-tabs">
       <button
@@ -55,40 +70,52 @@ export default function Plan() {
           <PlanEditor />
         </div>
         <Panel
-          title={localize("A structured return to function")}
-          eyebrow={localize("ASSIGNED DEMONSTRATION PLAN")}
+          title={
+            activePlan
+              ? activePlan.title
+              : localize("A structured return to function")
+          }
+          eyebrow={localize(
+            activePlan
+              ? "ACTIVE DEMO PLAN VERSION"
+              : "ASSIGNED DEMONSTRATION PLAN",
+          )}
         >
+          {activePlan ? (
+            <>
+              <p>
+                {localize("Version")} {activePlan.version ?? 1} ·{" "}
+                {activePlan.sourceName}
+              </p>
+              <p>
+                {localize("Source author")}:{" "}
+                <span translate="no">{activePlan.author}</span>
+              </p>
+              <p>
+                {localize("Specialist approval")}: {localize("NOT VERIFIED")}
+              </p>
+              <p>
+                {localize("Activation date")}: {activePlan.activatedAt}
+              </p>
+            </>
+          ) : (
+            <p>
+              {localize("Authored in the fictional scenario by ")}
+              {localize(p.author)}.{" "}
+              {localize(
+                "Synthetic educational demonstration plan; not NASA-prescribed.",
+              )}
+            </p>
+          )}
           <p>
-            {localize("Authored in the fictional scenario by ")}
-            {localize(p.author)}
+            {localize("Explicit assigned days")}: 1–
+            {Math.max(p.day, ...sessions.map((s) => s.day))}.{" "}
             {localize(
-              ". These static activities illustrate a specialist-authored workflow; no real clinician has prescribed this plan.",
+              "Day 0 is landing; day 1 is the following calendar day. No clinical recovery duration is inferred.",
             )}
           </p>
-          <div className="phase-list">
-            {localize(
-              [
-                "Days 1–7 · Familiarization",
-                "Days 8–14 · Structured practice",
-                "Days 15–30 · Follow-up observation",
-              ].map((t, i) => (
-                <span
-                  key={t}
-                  className={
-                    (p.day <= 7 ? 0 : p.day <= 14 ? 1 : 2) === i ? "active" : ""
-                  }
-                >
-                  {localize(t)}
-                </span>
-              )),
-            )}
-          </div>
-          <p className="muted">
-            {localize(
-              "The 30-day timeline is illustrative. Activities are populated through demo day ",
-            )}
-            {localize(p.day + 3)}
-            {localize(". Assessments never change assigned dose or frequency.")}
+          <p>
+            {localize("Assessments never change assigned dose or frequency.")}
           </p>
         </Panel>
         <Panel
@@ -173,9 +200,17 @@ export default function Plan() {
                         </span>
                       </td>
                       <td>
-                        {localize(s.fatigue)}
+                        {localize(
+                          s.fatigueRecorded || (!s.planId && !s.recordedAt)
+                            ? s.fatigue
+                            : "Not recorded",
+                        )}
                         {localize(" /")}
-                        {localize(s.discomfort)}
+                        {localize(
+                          s.discomfortRecorded || (!s.planId && !s.recordedAt)
+                            ? s.discomfort
+                            : "Not recorded",
+                        )}
                       </td>
                       <td>{localize(s.notes || "—")}</td>
                     </tr>

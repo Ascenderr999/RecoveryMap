@@ -11,6 +11,8 @@ export const fields = [
   "frequency",
   "schedule",
   "notes",
+  "category",
+  "sourceReference",
 ] as const;
 const aliases: Record<string, (typeof fields)[number]> = {
   exercise: "exercise",
@@ -28,6 +30,9 @@ const aliases: Record<string, (typeof fields)[number]> = {
   days: "schedule",
   day: "schedule",
   notes: "notes",
+  category: "category",
+  source: "sourceReference",
+  sourcereference: "sourceReference",
 };
 export const blankActivity = (): PlanActivity => ({
   id: crypto.randomUUID(),
@@ -39,6 +44,8 @@ export const blankActivity = (): PlanActivity => ({
   frequency: "",
   schedule: "",
   notes: "",
+  category: "",
+  sourceReference: "",
 });
 export function parsePlanText(text: string, csv = false): PlanActivity[] {
   if (!text.trim())

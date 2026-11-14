@@ -57,6 +57,53 @@ export default function Gap() {
           </span>
         </div>
       </div>
+      <Panel title={localize("Exact paired observations")}>
+        <p>
+          {localize(
+            "Primary gap uses timed mobility only. Balance and coordination are tracked separately. The inverse-time index is not a direct percentage reduction in time. Unspecified protocols are not scientifically verified.",
+          )}
+        </p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {[
+                  "Date",
+                  "Force / baseline (N)",
+                  "Time / baseline (s)",
+                  "Force change (%)",
+                  "Raw time change (%)",
+                  "Inverse-time change (%)",
+                  "Gap (pp)",
+                  "Protocol / source",
+                ].map((h) => (
+                  <th key={h}>{localize(h)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {trend.map((v) => (
+                <tr key={v.date}>
+                  <td>{v.date}</td>
+                  <td>
+                    {v.forceValue} / {v.baselineForce}
+                  </td>
+                  <td>
+                    {v.timeValue} / {v.baselineTime}
+                  </td>
+                  <td>{fmt(v.strength - 100)}</td>
+                  <td>{fmt(100 * (v.timeValue / v.baselineTime - 1))}</td>
+                  <td>{fmt(v.mobility - 100)}</td>
+                  <td>{fmt(v.gap)}</td>
+                  <td>
+                    {localize(v.protocol)} / {v.forceId} / {v.timeId}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
       <div className="two-col">
         <Panel
           title={localize("Strength & mobility trend")}

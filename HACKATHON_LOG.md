@@ -15,3 +15,11 @@ Final integration checks: production build passed (49 precached resources; revis
 Offline acceptance did not pass in the in-app browser: verified cache contents/controller, then stopped the preview server and independently confirmed connection refusal. Reload rendered a blank shell on both an existing and fresh origin. Improved cache-first bundle handling and HTTP-error navigation fallback; retained an honest unresolved offline item. No deployment performed. Final tests and commit follow this entry; no earlier timestamps are invented.
 
 Final test rerun at 17:52 Asia/Baku: pnpm test passed 42/42 tests across 6 files, including HTTP-error cache fallback. The standalone Python verifier passed. Git diff checks are run before committing. Commit hash is recorded in the final handoff rather than self-embedded in this commit.
+
+## Final master milestone — 14 November 2026, 22:23 Asia/Baku
+
+Implemented and verified plan versions/explicit activation/history, personal baseline and observation revision history, strict reviewed assessment CSV, dated compatible comparisons, separate NASA Spotlight, computed explorer counts and group/session/hash controls, filtered single-source reports and actual local PDF/CSV/JSON downloads. Independent current NASA public direct API downloads matched both pinned original hashes. Original input package and raw research records preserved.
+
+Final executed tests:55/55 across7 files; explicit TypeScript check passed. Production build passed with55 cached resources, revision 1d5320f5a794. Downloaded personal/research PDFs parsed; filtered personal exports agreed. Browser scenario workflow, reset/restore, version persistence and responsive EN/AZ checks recorded in TEST_REPORT.md.
+
+Full disconnected React navigation remains open in the in-app browser; static EN/AZ fallback was observed offline after server shutdown. No blanket COMPLETE or deployment claim. Final Git hash/push/deployment state is reported in the final handoff response. Original attribution timestamps are preserved separately.

@@ -6,8 +6,17 @@ import {
   performance,
   personalCompatible,
 } from "../lib/calculations";
+import { protocolLabel } from "../lib/assessmentWorkflow";
 import { fmt } from "./ui";
-export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
+export function AssessmentHistory({
+  rows,
+  contextRows = rows,
+  onEdit,
+}: {
+  rows: Assessment[];
+  contextRows?: Assessment[];
+  onEdit?: (a: Assessment) => void;
+}) {
   return (
     <div className="table-wrap">
       <table>
@@ -26,7 +35,7 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
             [...rows]
               .sort((a, b) => b.date.localeCompare(a.date))
               .map((a) => {
-                const base = baselineFor(rows, a.metric);
+                const base = baselineFor(contextRows, a.metric, a.date);
                 return (
                   <tr key={a.id}>
                     <td>{localize(a.date)}</td>
@@ -42,7 +51,11 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
                     <td>
                       {localize(
                         a.baseline ? (
-                          <span className="pill">{localize("Baseline")}</span>
+                          <span className="pill">
+                            {localize(
+                              a.supersededAt ? "Archived baseline" : "Baseline",
+                            )}
+                          </span>
                         ) : base ? (
                           personalCompatible(a, base) ? (
                             `${fmt(performance(a.value, base.value, metricInfo[a.metric].higher) ?? undefined)}% of baseline`
@@ -54,8 +67,9 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
                         ),
                       )}
                       <small className="table-detail" translate="no">
-                        {a.protocol ?? "standard"}
-                        <br/>{a.environment??'Personal demo / unspecified gravity'}
+                        {localize(protocolLabel(a.protocol))}
+                        <br />
+                        {a.environment ?? "Personal demo / unspecified gravity"}
                       </small>
                     </td>
                     <td>
@@ -65,7 +79,19 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
                           : "Synthetic seed",
                       )}
                     </td>
-                    <td translate="no">{a.notes || "—"}</td>
+                    <td translate="no">
+                      {a.notes || "—"}
+                      {a.changeHistory?.length ? (
+                        <small>
+                          {localize("Revisions")}: {a.changeHistory.length}
+                        </small>
+                      ) : null}
+                      {onEdit && !a.baseline && a.id.includes("-manual-") && (
+                        <button className="button" onClick={() => onEdit(a)}>
+                          {localize("Edit observation")}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               }),

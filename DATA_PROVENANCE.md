@@ -75,3 +75,11 @@ No prescriptions, adherence, fatigue, symptoms, or medical outcomes exist in the
 [Post-Flight Reconditioning, NTRS 20240000802](https://ntrs.nasa.gov/citations/20240000802), a presentation attributed by NTRS to Danielle N. Anderson and Corey A. Twine, is a source/template reference, not a personal prescription for 9023 or another participant. The NTRS record notes public distribution and that portions may be copyright protected. No presentation content is republished as a participant treatment plan.
 
 The supplied metadata did not establish a dataset-specific redistribution license. Retain NASA/source attribution and check original archive terms before wider redistribution. No NASA endorsement, clinical validation, Mars prediction, EVA clearance, automatic prescription, or gravity rescaling is claimed.
+
+## Final master implementation verification — 14 November 2026, 22:09 Asia/Baku
+
+Independently downloaded BOTH publicly accessible direct NASA file APIs into ignored test-results/ during this session, without credentials or modification of bundled raw files. SHA-256 of the newly downloaded force/slalom files exactly matched the pinned originals above. This establishes current public-file byte identity; it does not invent or verify the supplied package author's earlier acquisition timestamp. Dataset-specific redistribution terms remain unidentified and should be reviewed before wider redistribution.
+
+Added backward-compatible personal baseline/revision history, reviewed plan versions, explicit user demo activation with specialistVerified=false, future schedule archival and source/category preservation. These are user workflow records, not research observations or NASA prescriptions. Missing personal task protocols are labeled PROTOCOL UNSPECIFIED. Synthetic example calculations remain unchanged and are covered in the final suite.
+
+DM Sans font for PDF reports was obtained from the official google/fonts ofl/dmsans directory. The original OFL is bundled as public/assets/DM-Sans-OFL.txt; font at public/assets/dm-sans-report.ttf. It is used only for local PDF rendering, including Azerbaijani glyphs. No health data is transmitted during PDF generation.

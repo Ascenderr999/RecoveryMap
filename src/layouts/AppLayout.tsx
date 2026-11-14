@@ -114,7 +114,7 @@ export function AppLayout() {
                     <span className="badge">
                       {localize(
                         state.sessions.filter(
-                          (s) => s.profileId === p.id && s.day === p.day,
+                          (s) => s.profileId === p.id && s.day === p.day && !s.archivedAt,
                         ).length,
                       )}
                     </span>

@@ -59,7 +59,7 @@ export function ModeBar() {
       ) : (
         <p>
           {t(
-            "Fictional profiles, approved user plans, and manually entered measurements. Research records stay separate.",
+            "Fictional profiles, reviewed user plans, and manually entered measurements. Specialist approval is not verified. Research records stay separate.",
           )}
         </p>
       )}

@@ -4,6 +4,12 @@ import { Upload, Plus, Trash2, Save } from "lucide-react";
 import { Panel, Empty } from "./ui";
 import { useProfileData } from "../hooks/useProfileData";
 import { blankActivity, fields, readPlanFile } from "../lib/planImport";
+import {
+  activatePlan,
+  savePlanVersion,
+  validatePlan,
+  scheduleDays,
+} from "../lib/planWorkflow";
 import type { RecoveryPlan } from "../types";
 export function PlanEditor() {
   const { p, state, update, saving } = useProfileData();
@@ -52,88 +58,44 @@ export function PlanEditor() {
   }
   async function save() {
     if (!draft) return;
-    if (
-      !draft.title.trim() ||
-      !draft.author.trim() ||
-      !draft.activities.length ||
-      draft.activities.some((a) => !a.exercise.trim() || !a.instructions.trim())
-    ) {
-      setError(
-        "Enter a plan title, source author, and a name and instructions for every activity.",
-      );
+    const warnings = validatePlan(draft);
+    if (warnings.length) {
+      setError(warnings.join(" "));
       return;
     }
-    if (
-      await update((s) => ({
-        ...s,
-        plans: [
-          ...(s.plans || []).filter((plan) => plan.id !== draft.id),
-          draft,
-        ],
-      }))
-    ) {
+    if (await update((s) => savePlanVersion(s, draft))) {
       setDraft(null);
       setError("");
       setMessage(
-        "Plan saved locally. Scheduling requires an explicit reviewed mission day.",
+        "Plan version saved locally. Review the schedule and explicitly activate the demo plan.",
       );
     }
   }
   async function schedule(plan: RecoveryPlan) {
-    const scheduled = plan.activities.map((a) => ({
-      a,
-      days: a.schedule
-        .split(/[,;\s]+/)
-        .filter(Boolean)
-        .map(Number),
-    }));
-    if (
-      scheduled.some(
-        ({ days }) =>
-          !days.length ||
-          days.some((d) => !Number.isInteger(d) || d < 1 || d > 365),
-      )
-    ) {
-      setError(
-        "For scheduling, enter explicit mission days from 1 to 365 separated by commas for every activity. Frequency text is never interpreted automatically.",
-      );
+    try {
+      plan.activities.forEach((a) => scheduleDays(a.schedule));
+    } catch {
+      setError("Enter explicit mission days 1–365 for every activity.");
       return;
     }
-    const added = scheduled.flatMap(({ a, days }) =>
-      [...new Set(days)].map((day) => ({
-        id: `${plan.id}-${a.id}-${day}`,
-        planId: plan.id,
-        profileId: p.id,
-        day,
-        exercise: a.exercise,
-        description: a.instructions,
-        dose: [
-          a.sets && `${a.sets} sets`,
-          a.repetitions && `${a.repetitions} repetitions`,
-          a.duration,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-        category: "Imported plan",
-        status: "scheduled" as const,
-        notes: a.notes,
-        fatigue: 0,
-        discomfort: 0,
-      })),
-    );
     if (
-      await update((s) => ({
-        ...s,
-        sessions: [
-          ...s.sessions,
-          ...added.filter((a) => !s.sessions.some((old) => old.id === a.id)),
-        ],
-      }))
-    ) {
-      setError("");
-      setMessage(
-        "Reviewed activities added to the daily schedule. Existing records were preserved.",
-      );
+      !window.confirm(
+        localize(
+          "Activate this reviewed demo plan? This records your authorization to use the demonstration, not verified specialist approval. Pending activities from today onward will be archived; completed and skipped history will be preserved.",
+        ),
+      )
+    )
+      return;
+    try {
+      const next = activatePlan(state, plan.id, p.day, true);
+      if (await update(() => next)) {
+        setError("");
+        setMessage(
+          "Demo plan activated. Previous versions and session history are retained.",
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Activation failed.");
     }
   }
   return (
@@ -144,6 +106,11 @@ export function PlanEditor() {
       <p>
         {localize(
           "Import only authored content. Review all extracted fields before saving. Unstructured text remains in instructions; no doses or medical recommendations are inferred. Source-language content is preserved.",
+        )}
+      </p>
+      <p className="notice">
+        {localize(
+          "Plans are stored in this browser’s IndexedDB, not a server database. Upload and review do not verify specialist approval. Unknown doses stay blank.",
         )}
       </p>
       <div className="import-actions">
@@ -186,6 +153,16 @@ export function PlanEditor() {
         draft && (
           <div className="plan-review">
             <h3>{localize("Review and edit before saving")}</h3>
+            <p>
+              {localize("Review warnings")}: {draft.activities.length}{" "}
+              {localize("parsed entries")}; {validatePlan(draft).length}{" "}
+              {localize("blocking issues")}
+            </p>
+            <ul>
+              {validatePlan(draft).map((w) => (
+                <li key={w}>{localize(w)}</li>
+              ))}
+            </ul>
             <p>
               {localize(
                 "CSV headers: exercise, instructions, sets, repetitions, duration, frequency, schedule, notes. For TXT use labeled lines, with blank lines between activities. Verify PDF/DOCX reading order against the original.",
@@ -307,11 +284,23 @@ export function PlanEditor() {
                     {plan.sourceName}
                   </p>
                   <small>
-                    {localize(plan.activities.length)}
+                    {localize("Version")} {plan.version ?? 1} ·{" "}
+                    {plan.activatedAt
+                      ? localize(plan.archivedAt ? "Archived" : "Active")
+                      : localize("Reviewed only")}{" "}
+                    · {localize(plan.activities.length)}
                     {localize(" activities \u00B7")}
                     {localize(plan.importedAt.slice(0, 10))}
                   </small>
                 </div>
+                <p>
+                  {localize("Specialist approval")}: {localize("NOT VERIFIED")}
+                  <br />
+                  {localize("Activation date")}: {plan.activatedAt ?? "—"}
+                  <br />
+                  {localize("Previous version")}:{" "}
+                  {plan.previousVersionId ?? "—"}
+                </p>
                 <div className="exercise-actions">
                   <button
                     className="button"
@@ -324,10 +313,12 @@ export function PlanEditor() {
                   </button>
                   <button
                     className="button primary"
-                    disabled={saving}
+                    disabled={
+                      saving || Boolean(plan.activatedAt || plan.archivedAt)
+                    }
                     onClick={() => void schedule(plan)}
                   >
-                    {localize("Add reviewed schedule")}
+                    {localize("Activate reviewed demo plan")}
                   </button>
                 </div>
               </article>
