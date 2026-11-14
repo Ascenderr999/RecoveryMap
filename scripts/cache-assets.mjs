@@ -3,10 +3,12 @@ import { createHash } from "node:crypto";
 const assets = (await readdir("dist/assets"))
   .filter((f) => !f.endsWith(".map"))
   .map((f) => "/assets/" + f);
-const version = createHash("sha256")
-  .update(assets.join("|"))
-  .digest("hex")
-  .slice(0, 12);
+const hash = createHash("sha256");
+for (const asset of [...assets].sort()) {
+  hash.update(asset);
+  hash.update(await readFile("dist" + asset));
+}
+const version = hash.digest("hex").slice(0, 12);
 let sw = await readFile("dist/sw.js", "utf8");
 sw = sw.replace(
   "const CACHE='recoverymap-v1';",

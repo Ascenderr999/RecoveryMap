@@ -1,3 +1,4 @@
+import { localize } from "../i18n";
 import {
   createContext,
   useContext,
@@ -65,19 +66,21 @@ export function RecoveryProvider({ children }: { children: ReactNode }) {
   if (!state)
     return (
       <div className="boot">
-        <strong>R / RecoveryMap</strong>
-        <p>{error || "Initializing local mission workspace…"}</p>
+        <strong>{localize("R / RecoveryMap")}</strong>
+        <p>{localize(error || "Initializing local mission workspace…")}</p>
       </div>
     );
   return (
     <Context.Provider value={{ state, update, reset, saving }}>
-      {error && (
-        <div role="alert" className="error">
-          {error}
-          <button onClick={() => setError("")}>Dismiss</button>
-        </div>
+      {localize(
+        error && (
+          <div role="alert" className="error">
+            {localize(error)}
+            <button onClick={() => setError("")}>{localize("Dismiss")}</button>
+          </div>
+        ),
       )}
-      {children}
+      {localize(children)}
     </Context.Provider>
   );
 }

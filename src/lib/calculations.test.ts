@@ -8,6 +8,16 @@ import {
 } from "./calculations";
 import { createSeed, profiles } from "../data/seed";
 describe("descriptive baseline calculations", () => {
+  it("excludes observations that use a different protocol from their baseline", () => {
+    const rows = createSeed()
+      .assessments.filter((a) => a.profileId === "morgan")
+      .map((a) =>
+        a.metric === "strength" && !a.baseline
+          ? { ...a, protocol: "other-device" }
+          : a,
+      );
+    expect(matchedTrend(rows)).toEqual([]);
+  });
   it("uses the correct direction and percentage point difference", () => {
     expect(performance(450, 500, true)).toBe(90);
     expect(performance(20, 10, false)).toBe(50);

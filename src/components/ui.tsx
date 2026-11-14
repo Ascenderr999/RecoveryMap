@@ -1,3 +1,4 @@
+import { localize } from "../i18n";
 import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,18 +8,20 @@ export function ProfileSelector() {
   const { state, update, saving } = useRecovery();
   return (
     <select
-      aria-label="Select synthetic astronaut profile"
+      aria-label={localize("Select synthetic astronaut profile")}
       value={state.selectedProfile}
       disabled={saving}
       onChange={(e) =>
         void update((s) => ({ ...s, selectedProfile: e.target.value }))
       }
     >
-      {profiles.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.rank} {p.name}
-        </option>
-      ))}
+      {localize(
+        profiles.map((p) => (
+          <option key={p.id} value={p.id}>
+            {localize(p.rank)} {localize(p.name)}
+          </option>
+        )),
+      )}
     </select>
   );
 }
@@ -39,12 +42,14 @@ export function Panel({
     <section className={`panel ${className}`}>
       <div className="panel-head">
         <div>
-          {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-          <h2>{title}</h2>
+          {localize(
+            eyebrow && <span className="eyebrow">{localize(eyebrow)}</span>,
+          )}
+          <h2>{localize(title)}</h2>
         </div>
-        {action}
+        {localize(action)}
       </div>
-      {children}
+      {localize(children)}
     </section>
   );
 }
@@ -62,14 +67,14 @@ export function PageTitle({
   return (
     <div className="page-title">
       <div>
-        <span className="eyebrow">{label}</span>
+        <span className="eyebrow">{localize(label)}</span>
         <h1>
-          {title}
-          <span className="teal">.</span>
+          {localize(title)}
+          <span className="teal">{localize(".")}</span>
         </h1>
-        <p>{description}</p>
+        <p>{localize(description)}</p>
       </div>
-      {action}
+      {localize(action)}
     </div>
   );
 }
@@ -89,14 +94,14 @@ export function MetricCard({
   return (
     <div className="metric-card">
       <div className="metric-label">
-        {label}
-        {icon}
+        {localize(label)}
+        {localize(icon)}
       </div>
       <div className="metric-value">
-        {value}
-        <small>{unit}</small>
+        {localize(value)}
+        <small>{localize(unit)}</small>
       </div>
-      <p>{detail}</p>
+      <p>{localize(detail)}</p>
     </div>
   );
 }
@@ -109,7 +114,7 @@ export function TextLink({
 }) {
   return (
     <Link className="text-link" to={to}>
-      {children}
+      {localize(children)}
       <ArrowUpRight size={14} />
     </Link>
   );
@@ -117,13 +122,15 @@ export function TextLink({
 export function DemoNotice() {
   return (
     <div className="notice">
-      <span className="dot amber" /> Synthetic demonstration · Fictional
-      profiles and manually entered measurements. Not medical advice.
+      <span className="dot amber" />
+      {localize(
+        " Synthetic demonstration \u00B7 Fictional profiles and manually entered measurements. Not medical advice.",
+      )}
     </div>
   );
 }
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="empty">{children}</p>;
+  return <p className="empty">{localize(children)}</p>;
 }
 export const fmt = (n: number | undefined, d = 1) =>
   n === undefined ? "—" : n.toFixed(d);

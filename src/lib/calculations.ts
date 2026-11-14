@@ -5,7 +5,10 @@ export function performance(
   baseline: number,
   higher: boolean,
 ) {
-  return current > 0 && baseline > 0
+  return Number.isFinite(current) &&
+    Number.isFinite(baseline) &&
+    current > 0 &&
+    baseline > 0
     ? (higher ? current / baseline : baseline / current) * 100
     : null;
 }
@@ -23,8 +26,14 @@ export function baselineFor(rows: Assessment[], metric: Metric) {
   return rows.find((a) => a.metric === metric && a.baseline);
 }
 export function latestFor(rows: Assessment[], metric: Metric) {
+  const baseline = baselineFor(rows, metric);
   return rows
-    .filter((a) => a.metric === metric && !a.baseline)
+    .filter(
+      (a) =>
+        a.metric === metric &&
+        !a.baseline &&
+        (a.protocol ?? "standard") === (baseline?.protocol ?? "standard"),
+    )
     .sort(
       (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id),
     )[0];
@@ -47,10 +56,18 @@ export function matchedTrend(rows: Assessment[]) {
     .sort()
     .flatMap((date) => {
       const s = rows.find(
-          (a) => a.date === date && a.metric === "strength" && !a.baseline,
+          (a) =>
+            a.date === date &&
+            a.metric === "strength" &&
+            !a.baseline &&
+            (a.protocol ?? "standard") === (bs.protocol ?? "standard"),
         ),
         m = rows.find(
-          (a) => a.date === date && a.metric === "mobility" && !a.baseline,
+          (a) =>
+            a.date === date &&
+            a.metric === "mobility" &&
+            !a.baseline &&
+            (a.protocol ?? "standard") === (bm.protocol ?? "standard"),
         );
       return s && m
         ? [

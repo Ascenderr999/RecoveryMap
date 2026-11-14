@@ -1,245 +1,279 @@
+import { localize } from "../i18n";
 import { Link } from "react-router-dom";
-import {
-  ArrowUpRight,
-  CheckCheck,
-  Target,
-  Dumbbell,
-  Timer,
-  Orbit,
-  ArrowRight,
-  Activity,
-} from "lucide-react";
 import { useProfileData } from "../hooks/useProfileData";
-import { dateFor, metricInfo } from "../data/seed";
-import { performance } from "../lib/calculations";
-import {
-  Panel,
-  PageTitle,
-  MetricCard,
-  TextLink,
-  DemoNotice,
-  fmt,
-} from "../components/ui";
 import { TrajectoryChart } from "../components/Charts";
-import type { Metric } from "../types";
+import { fmt } from "../components/ui";
+import { performance } from "../lib/calculations";
 export default function Dashboard() {
-  const { p, rows, sessions, stats, latest, baseline, trend } =
+  const { p, rows, sessions, latest, baseline, trend, update, saving } =
     useProfileData();
-  const last = trend.at(-1);
+  const today = sessions.filter((s) => s.day === p.day),
+    done = today.filter((s) => s.status === "completed").length;
+  const force = latest("strength"),
+    baseForce = baseline("strength"),
+    mobility = latest("mobility"),
+    baseMobility = baseline("mobility");
+  const strength =
+    force && baseForce ? performance(force.value, baseForce.value, true) : null;
+  const functionRatio =
+    mobility && baseMobility
+      ? performance(mobility.value, baseMobility.value, false)
+      : null;
+  const pair = trend.at(-1);
   return (
     <>
-      <PageTitle
-        label="MISSION OPERATIONS / OVERVIEW"
-        title="Mission Control"
-        description={`Welcome back, ${p.rank} ${p.name.split(" ")[1]}. Your recovery workspace is ready.`}
-        action={
-          <Link className="button primary" to="/assessment">
-            Record assessment <ArrowUpRight size={16} />
-          </Link>
-        }
-      />
-      <section className="mission-banner">
-        <div className="mission-copy">
-          <span className="eyebrow">
-            <span className="dot" /> POST-LANDING RECOVERY / DEMO SCENARIO
-          </span>
+      <div className="pagetitle">
+        <div>
+          <h1>{localize("Every step is progress.")}</h1>
+          <p className="sub">
+            {localize(
+              "Your recovery journey today. Moving closer to your goal, together.",
+            )}
+          </p>
+        </div>
+        <span className="chip">
+          <b>{localize("\u25C9")}</b>
+          {localize("RECOVERY DAY ")}
+          {localize(p.day)}
+        </span>
+      </div>
+      <section className="hero">
+        <div className="herocopy">
+          <div className="eyebrow">
+            {localize("RECOVERY BEYOND GRAVITY \u00B7 DEMO")}
+          </div>
           <h2>
-            Every step forward.
+            {localize("Your strength returns.")}
             <br />
-            <span>A clearer path to recovery.</span>
+            <em>{localize("Your movement, with it.")}</em>
           </h2>
           <p>
-            {p.mission} · {p.focus}
+            {localize(
+              "An offline-first recovery companion for astronauts after landing. Your assigned plan, movement measurements, and daily progress \u2014 one recovery map.",
+            )}
           </p>
-          <div className="banner-meta">
-            <span>{p.code}</span>
-            <span>Landing: {p.landing}</span>
-            <span>Demo date: {dateFor(p, p.day)}</span>
-          </div>
+          <Link className="btn primary" to="/plan">
+            {localize("Start today's program")}
+            <span>{localize("\u2197")}</span>
+          </Link>
         </div>
-        <div className="planet-scene" aria-hidden="true">
-          <div className="orbit-ring ring1" />
-          <div className="orbit-ring ring2" />
-          <div className={`planet ${p.destination.toLowerCase()}`} />
-          <span className="planet-label">
-            {p.destination.toUpperCase()} / {p.code}
-          </span>
-        </div>
-        <div className="mission-day">
-          <span>MISSION DAY</span>
-          <strong>{String(p.day).padStart(2, "0")}</strong>
-          <small>days since landing</small>
-          <div className="day-track">
-            <i style={{ width: `${(p.day / 30) * 100}%` }} />
-          </div>
-          <small>30-day synthetic timeline</small>
+        <div className="missionrail" aria-label={localize("Mission stages")}>
+          <span className="railnode" />
+          {localize("Pre-flight")}
+          <span className="railline" />
+          <span className="railnode" />
+          {localize("Mission")}
+          <span className="railline" />
+          <span className="railnode" />
+          <b className="railnow">
+            {localize("Recovery \u00B7 Day")}
+            {localize(p.day)}
+          </b>
+          <span className="railline" />
+          <span className="railnode railpending" />
+          {localize("Adaptation")}
         </div>
       </section>
-      <div className="metrics">
-        <MetricCard
-          label="Sessions completed"
-          value={stats.completed}
-          unit={`/ ${stats.total}`}
-          detail="All assigned sessions due through today"
-          icon={<CheckCheck />}
-        />
-        <MetricCard
-          label="Plan adherence"
-          value={fmt(stats.percent, 0)}
-          unit="%"
-          detail={`${stats.skipped} skipped · due activities denominator`}
-          icon={<Target />}
-        />
-        <MetricCard
-          label="Latest measured force"
-          value={fmt(latest("strength")?.value, 0)}
-          unit="N"
-          detail={`${fmt(performance(latest("strength")!.value, baseline("strength")!.value, true)!)}% of baseline · manually entered`}
-          icon={<Dumbbell />}
-        />
-        <MetricCard
-          label="Functional mobility"
-          value={fmt(latest("mobility")?.value)}
-          unit="s"
-          detail="Timed task · lower indicates faster completion"
-          icon={<Timer />}
-        />
+      <div className="stats">
+        <div className="stat">
+          <div className="stathead">
+            {localize("Recovery stage")}
+            <span>{localize("\u25F7")}</span>
+          </div>
+          <div className="statvalue">
+            {localize(p.day)}
+            <small>{localize(" / 30 days")}</small>
+          </div>
+          <div className="trend neutral">
+            {localize("Synthetic mission timeline")}
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stathead">
+            {localize("Muscle strength \u00B7 demo")}
+            <span>{localize("\u03DF")}</span>
+          </div>
+          <div className="statvalue">
+            {localize(fmt(strength ?? undefined, 0))}
+            <small>{localize("% baseline")}</small>
+          </div>
+          <div className="trend">
+            {localize(force?.value)}
+            {localize(" N \u00B7")}
+            {localize(force?.date)}
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stathead">
+            {localize("Functional performance \u00B7 demo")}
+            <span>{localize("\u2301")}</span>
+          </div>
+          <div className="statvalue">
+            {localize(fmt(functionRatio ?? undefined, 0))}
+            <small>{localize("% baseline")}</small>
+          </div>
+          <div className="trend">
+            {localize(mobility?.value)}
+            {localize(" s \u00B7")}
+            {localize(mobility?.date)}
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stathead">
+            {localize("Today's sessions")}
+            <span>{localize("\u25A4")}</span>
+          </div>
+          <div className="statvalue">
+            {localize(done)}
+            <small>
+              {localize(" /")}
+              {localize(today.length)}
+              {localize(" completed")}
+            </small>
+          </div>
+          <div className="trend neutral">
+            {localize(today.length - done)}
+            {localize(" activities remaining")}
+          </div>
+        </div>
       </div>
-      <div className="dashboard-grid">
-        <Panel
-          title="Recovery trajectory"
-          eyebrow="BASELINE-RELATIVE PERFORMANCE"
-          action={<span className="pill">Matched observations</span>}
-        >
+      <div className="grid">
+        <section className="card">
+          <div className="cardhead">
+            <h2>{localize("Two sides of recovery")}</h2>
+            <Link className="link" to="/gap">
+              {localize("Explore \u2197")}
+            </Link>
+          </div>
           <TrajectoryChart rows={rows} />
-          <p className="chart-caption">
-            Ratios to baseline, not clinical recovery percentages. Only
-            same-date force and mobility observations appear.
-          </p>
-        </Panel>
-        <Panel
-          title="Functional performance"
-          eyebrow="LATEST MANUAL MEASUREMENTS"
-          action={<Activity size={18} className="teal" />}
-        >
-          <div className="performance-list">
-            {(
-              ["strength", "mobility", "balance", "coordination"] as Metric[]
-            ).map((m) => {
-              const a = latest(m),
-                b = baseline(m),
-                percent =
-                  a && b
-                    ? performance(a.value, b.value, metricInfo[m].higher)
-                    : null;
-              return (
-                <div key={m} className="performance-row">
-                  <div>
-                    <span>{metricInfo[m].label}</span>
-                    <strong>
-                      {fmt(a?.value)} <small>{metricInfo[m].unit}</small>
-                    </strong>
-                  </div>
-                  <div
-                    className={`progress-bar ${m === "mobility" ? "purple" : ""}`}
-                  >
-                    <i style={{ width: `${Math.min(percent || 0, 100)}%` }} />
-                  </div>
-                  <small>
-                    {fmt(percent ?? undefined)}% of baseline ·{" "}
-                    {metricInfo[m].direction}
-                  </small>
-                </div>
-              );
-            })}
-          </div>
-          <TextLink to="/assessment">View assessment history</TextLink>
-        </Panel>
-        <Panel
-          title="Today's recovery schedule"
-          eyebrow={`DAY ${p.day} / SYNTHETIC PLAN`}
-          action={<TextLink to="/plan">Open plan</TextLink>}
-        >
-          <div className="schedule">
-            {sessions
-              .filter((s) => s.day === p.day)
-              .map((s, i) => (
-                <Link key={s.id} to="/plan" className="schedule-row">
-                  <span className="schedule-index">0{i + 1}</span>
-                  <div>
-                    <strong>{s.exercise}</strong>
-                    <small>
-                      {s.category} · {s.dose}
-                    </small>
-                  </div>
-                  <span className={`status ${s.status}`}>{s.status}</span>
-                  <ArrowRight size={16} />
-                </Link>
-              ))}
-          </div>
-        </Panel>
-        <Panel
-          title="The Recovery Gap"
-          eyebrow="STRENGTH ≠ FUNCTION"
-          action={<Orbit size={20} className="teal" />}
-        >
-          <div className="gap-preview">
-            <strong>
-              {last ? fmt(last.gap) : "—"}
-              <small>pp</small>
-            </strong>
+          <div className="note">
+            <span>{localize("\u25C8")}</span>
             <span>
-              Descriptive difference in
-              <br />
-              baseline-relative changes
+              <strong>
+                {localize(fmt(pair?.gap))}
+                {localize(" percentage points difference.")}
+              </strong>
+              {localize(
+                " Strength and function can change at different rates. Matched-date baseline ratios; not a diagnostic score. Seed values are synthetic; manual entries remain labeled in history.",
+              )}
             </span>
           </div>
-          <p>
-            Measured strength and functional mobility can follow different
-            trajectories. Compare them without assuming a clinical outcome.
-          </p>
-          <TextLink to="/gap">Explore the comparison</TextLink>
-        </Panel>
+        </section>
+        <section className="card">
+          <div className="cardhead">
+            <h2>{localize("Today's program")}</h2>
+            <span className="tag">
+              {localize(today.length)}
+              {localize(" ACTIVITIES")}
+            </span>
+          </div>
+          {localize(
+            today.map((s, i) => (
+              <div className="exercise" key={s.id}>
+                <span className="exerciseicon">
+                  {localize(["↥", "⫶", "⌁"][i % 3])}
+                </span>
+                <div>
+                  <h3 translate={s.planId ? "no" : undefined}>
+                    {s.planId ? s.exercise : localize(s.exercise)}
+                  </h3>
+                  <p translate={s.planId ? "no" : undefined}>
+                    {s.planId ? s.dose : localize(s.dose)}
+                  </p>
+                </div>
+                <span className="duration">{localize(s.category)}</span>
+                <button
+                  className={`circle ${s.status === "completed" ? "done" : ""}`}
+                  disabled={saving}
+                  aria-label={localize(`${s.exercise} completed`)}
+                  aria-pressed={s.status === "completed"}
+                  onClick={() =>
+                    void update((state) => ({
+                      ...state,
+                      sessions: state.sessions.map((row) =>
+                        row.id === s.id
+                          ? {
+                              ...row,
+                              status:
+                                row.status === "completed"
+                                  ? "scheduled"
+                                  : "completed",
+                            }
+                          : row,
+                      ),
+                    }))
+                  }
+                >
+                  {localize(s.status === "completed" ? "✓" : "")}
+                </button>
+              </div>
+            )),
+          )}
+          <div className="progress">
+            <span
+              style={{
+                width: `${today.length ? (done / today.length) * 100 : 0}%`,
+              }}
+            />
+          </div>
+          <div className="row">
+            <span className="small">
+              {localize(done)}
+              {localize(" /")}
+              {localize(today.length)}
+              {localize(" activities completed")}
+            </span>
+            <Link className="link" to="/plan">
+              {localize("Open program \u2192")}
+            </Link>
+          </div>
+        </section>
       </div>
-      <Panel title="Recent activity" eyebrow="LOCAL MISSION LOG">
-        <div className="activity-feed">
-          {rows
-            .filter((a) => !a.baseline)
-            .sort((a, b) => b.date.localeCompare(a.date))
-            .slice(0, 3)
-            .map((a) => (
-              <div key={a.id}>
-                <span className="activity-icon">
-                  <Activity size={17} />
-                </span>
-                <div>
-                  <strong>{metricInfo[a.metric].label} recorded</strong>
-                  <small>
-                    {a.value} {metricInfo[a.metric].unit} · Synthetic manual
-                    measurement
-                  </small>
-                </div>
-                <time>{a.date}</time>
-              </div>
-            ))}
-          {sessions
-            .filter((s) => s.status === "completed")
-            .slice(-2)
-            .map((s) => (
-              <div key={s.id}>
-                <span className="activity-icon">
-                  <CheckCheck size={17} />
-                </span>
-                <div>
-                  <strong>{s.exercise} completed</strong>
-                  <small>Assigned demonstration activity · Day {s.day}</small>
-                </div>
-                <time>{dateFor(p, s.day)}</time>
-              </div>
-            ))}
-        </div>
-      </Panel>
-      <DemoNotice />
+      <div className="lower">
+        <section className="card">
+          <span className="tag">{localize("DAILY NOTE")}</span>
+          <h3>{localize("How are you feeling today?")}</h3>
+          <p>
+            {localize(
+              "Fatigue and discomfort notes give context to your recovery journey.",
+            )}
+          </p>
+          <Link className="link" to="/plan">
+            {localize("Add a session note \uFF0B")}
+          </Link>
+        </section>
+        <section className="card">
+          <span className="tag orange">{localize("NEXT STEP")}</span>
+          <h3>{localize("Measure your movement")}</h3>
+          <p>
+            {localize(
+              "Record strength, balance, mobility, and coordination in one place.",
+            )}
+          </p>
+          <Link className="link" to="/assessment">
+            {localize("Enter a new result \u2192")}
+          </Link>
+        </section>
+        <section className="card">
+          <span className="tag">
+            {localize("SCIENCE WITH VISIBLE SOURCES")}
+          </span>
+          <h3>{localize("Context from NASA research")}</h3>
+          <p>
+            {localize(
+              "CFT70, human research, and SM-204 \u2014 with transparent limitations.",
+            )}
+          </p>
+          <Link className="link" to="/research">
+            {localize("Explore the sources \u2197")}
+          </Link>
+        </section>
+      </div>
+      <p className="demo-footnote">
+        {localize(
+          "DEMO \u00B7 Fictional profiles and synthetic seed data. Manually entered records are stored separately by profile. Not medical advice.",
+        )}
+      </p>
     </>
   );
 }

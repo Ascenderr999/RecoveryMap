@@ -1,8 +1,12 @@
+import { localize } from "../i18n";
 import { Component, type ReactNode } from "react";
-
 export class ErrorBoundary extends Component<
-  { children: ReactNode },
-  { failed: boolean }
+  {
+    children: ReactNode;
+  },
+  {
+    failed: boolean;
+  }
 > {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -12,16 +16,17 @@ export class ErrorBoundary extends Component<
     if (this.state.failed)
       return (
         <main className="boot" role="alert">
-          <strong>Workspace could not load</strong>
+          <strong>{localize("Workspace could not load")}</strong>
           <p>
-            Reconnect and reload if an application update is not cached. Your
-            saved local records remain on this device.
+            {localize(
+              "Reconnect and reload if an application update is not cached. Your saved local records remain on this device.",
+            )}
           </p>
           <button
             className="button primary"
             onClick={() => window.location.reload()}
           >
-            Reload workspace
+            {localize("Reload workspace")}
           </button>
         </main>
       );

@@ -1,33 +1,14 @@
-# Prompt 00 verification — 14 November 2026
+# Verification — reference design and bilingual recovery features
 
-Environment: Windows, Node.js v24.22.1, pnpm v11.25.0. npm was unavailable on PATH. The initial reference-site request failed, so implementation follows the supplied design system.
+14 November 2026 · Windows · Node.js 24.22.1 · pnpm 11.25.0.
 
-## Executed checks
+- `pnpm test`: **16 tests passed**, 4 test files. Covers baseline direction/percentage points, exact-date pairing, incompatible protocols, due-session adherence, assessment validation, IndexedDB initialization/reopening/reset/profile isolation, offline handlers, quoted multiline CSV, unstructured TXT, authored caution preservation, DOCX line breaks, and backup validation.
+- `pnpm build`: TypeScript, Vite production build, and content-revisioned offline asset preparation succeeded.
+- Reference source `design-reference/RecoveryMap` was read directly. CSS is reused with React selectors/local font adaptations; the supplied Earth WebP was copied without recompression. No source-reference files were modified.
+- Browser: desktop Earth hero, source layout, eight navigation links, and EN/AZ translations inspected. An unfinished plan retained its title and fields when switching languages. CSV and text PDF fixtures reached review with their original instructions and schedules. A no-text PDF showed the explicit OCR-unavailable message. DOCX soft-break extraction passed both the browser review check and an actual Mammoth conversion regression test. The final 390px Azerbaijani dashboard had no horizontal page overflow and no captured console warnings/errors.
+- Existing profile-local persistence and completion logic were retained; imported plans require author/title review and explicit day scheduling. UI source content and form values are not overwritten by language changes.
+- Official NASA HRP and SM-204 pages were accessed. CFT70's participant dataset page was inaccessible; participant-level integration is pending. No participant values were invented or integrated into demo charts. OSDR is linked as an official repository.
 
-- `pnpm install`: completed after registry/DNS retries. The official Rollup WebAssembly override avoids a native binary blocked by Windows Application Control; no system security settings were changed.
-- `pnpm build`: passed TypeScript, Vite production bundling, and offline asset-cache preparation.
-- `pnpm test`: calculation, IndexedDB lifecycle, and offline-handler tests. All 8 tests passed across 3 test files.
-- `git diff --check`: passed before commit.
-- Source review for credential-related strings: no credentials, API keys, or tokens present. `.env`, local secrets, dependencies, output, and local package stores are ignored.
+Limits: full pixel-by-pixel comparison across every route, physical print/PDF output, and complete airplane-mode browser operation were not verified. The service-worker lifecycle and asset precaching are tested/implemented; browser support and an initial online visit remain prerequisites. Scanned PDFs have no OCR. Complex PDF/DOCX layouts require review. Import does not establish medical suitability or authenticate a specialist.
 
-## Browser observations
-
-Verified in the local production preview at `http://127.0.0.1:4173`:
-
-- All six pages rendered; navigation and the mobile menu were exercised.
-- Morgan, Chen, and Rivera switched mission context and records correctly; the selected profile persisted after reload.
-- Completing a session saved its note and status; completion persisted after reload. Skipping another session updated its status.
-- A negative force value was rejected. A 490 N manual entry was saved and remained after reload; it appeared in Morgan's history but not Chen's.
-- Dashboard force changed to 490 N and adherence changed from 36/42 to 37/42. The unmatched-date entry did not alter the last paired-date gap of 19.9 pp.
-- Reports showed updated counts and baseline comparisons. Browser print control and print CSS are implemented; physical printing/PDF output was not verified.
-- Both NASA research links were present. Reset offered confirmation and cancellation; confirming restored the original 36/42 sessions and 470 N force.
-- Desktop, 390px dashboard, and 320px assessment layouts were visually reviewed. The mobile views had no horizontal document overflow.
-- No console warnings/errors were captured during the initial online workflow checks.
-
-## Offline verification limit
-
-The production build precaches all route bundles and CSS with a revisioned service worker. A lifecycle test covers deduplicated installation, offline route fallback, offline lazy-bundle retrieval, and pass-through of non-GET requests. The UI reports actual registration readiness or unsupported caching.
-
-Full browser offline behavior remains **unverified**: an initial server-off check failed to load a lazy route, cache initialization was revised, and a subsequent check returned inconsistent automation state. Browser automation then stopped because it could not determine Edge's current URL confidently. No browser security settings were bypassed. Validate airplane-mode refresh and navigation in a normal browser before presenting offline operation as fully tested.
-
-No deployment was attempted. Document import, real dataset integration, authentication, synchronization, and advanced exports remain future milestones.
+The provided Vercel URL is the production destination. Git push does not itself establish deployment success; the final task response reports whether the updated production build was confirmed.

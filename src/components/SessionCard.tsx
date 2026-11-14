@@ -1,3 +1,4 @@
+import { localize } from "../i18n";
 import { useState } from "react";
 import { Check, SkipForward, ClipboardList } from "lucide-react";
 import type { Session } from "../types";
@@ -24,17 +25,18 @@ export function SessionCard({ session: s }: { session: Session }) {
           <ClipboardList size={20} />
         </span>
         <div>
-          <span className="eyebrow">{s.category}</span>
-          <h3>{s.exercise}</h3>
+          <span className="eyebrow">{localize(s.category)}</span>
+          <h3>{s.planId ? s.exercise : localize(s.exercise)}</h3>
         </div>
-        <span className={`status ${s.status}`}>{s.status}</span>
+        <span className={`status ${s.status}`}>{localize(s.status)}</span>
       </div>
-      <p>{s.description}</p>
+      <p>{s.planId ? s.description : localize(s.description)}</p>
       <div className="dose">
-        Assigned dose <strong>{s.dose}</strong>
+        {localize("Assigned dose ")}
+        <strong>{s.planId ? s.dose : localize(s.dose)}</strong>
       </div>
       <label>
-        Session notes
+        {localize("Session notes")}
         <textarea
           value={notes}
           maxLength={2000}
@@ -42,12 +44,12 @@ export function SessionCard({ session: s }: { session: Session }) {
             setNotes(e.target.value);
             setSaved("");
           }}
-          placeholder="Record fatigue, discomfort, or observations…"
+          placeholder={localize("Record fatigue, discomfort, or observations…")}
         />
       </label>
       <div className="form-row">
         <label>
-          Fatigue (0–10)
+          {localize("Fatigue (0\u201310)")}
           <input
             type="number"
             min="0"
@@ -60,7 +62,7 @@ export function SessionCard({ session: s }: { session: Session }) {
           />
         </label>
         <label>
-          Discomfort (0–10)
+          {localize("Discomfort (0\u201310)")}
           <input
             type="number"
             min="0"
@@ -82,7 +84,7 @@ export function SessionCard({ session: s }: { session: Session }) {
           onClick={() => void save("completed")}
         >
           <Check size={15} />
-          Complete
+          {localize("Complete")}
         </button>
         <button
           className="button"
@@ -90,18 +92,18 @@ export function SessionCard({ session: s }: { session: Session }) {
           onClick={() => void save("skipped")}
         >
           <SkipForward size={15} />
-          Skip
+          {localize("Skip")}
         </button>
         <button
           className="button subtle"
           disabled={saving}
           onClick={() => void save(s.status)}
         >
-          Save notes
+          {localize("Save notes")}
         </button>
       </div>
       <div className="save-message" aria-live="polite">
-        {saved}
+        {localize(saved)}
       </div>
     </article>
   );

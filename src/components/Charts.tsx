@@ -1,6 +1,8 @@
+import { localize } from "../i18n";
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -31,23 +33,48 @@ export function TrajectoryChart({
 }) {
   const data = matchedTrend(rows);
   if (!data.length)
-    return <p>No same-date strength and mobility pairs available.</p>;
+    return (
+      <p>{localize("No same-date strength and mobility pairs available.")}</p>
+    );
   return (
     <div
       className="chart"
       role="img"
-      aria-label={
+      aria-label={localize(
         gap
           ? "Recovery Gap over matched assessment dates, in percentage points"
-          : "Strength and mobility relative to baseline over matched assessment dates"
-      }
+          : "Strength and mobility relative to baseline over matched assessment dates",
+      )}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
+        <ComposedChart
           data={data}
           margin={{ top: 14, right: 14, bottom: 10, left: 0 }}
         >
-          <CartesianGrid stroke={grid} vertical={false} />
+          <defs>
+            <linearGradient
+              id={gap ? "gap-fill" : "strength-fill"}
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop offset="0%" stopColor="#42e4ed" stopOpacity={0.15} />
+              <stop offset="100%" stopColor="#42e4ed" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          {!gap && (
+            <Area
+              isAnimationActive={false}
+              type="linear"
+              dataKey="strength"
+              fill="url(#strength-fill)"
+              stroke="none"
+              legendType="none"
+              tooltipType="none"
+            />
+          )}
+          <CartesianGrid stroke={grid} vertical={false} strokeDasharray="3 5" />
           <XAxis
             dataKey="date"
             tickFormatter={(v) => v.slice(5)}
@@ -58,13 +85,13 @@ export function TrajectoryChart({
           <YAxis
             stroke={muted}
             fontSize={11}
-            unit={gap ? " pp" : "%"}
+            unit={gap ? localize(" pp") : "%"}
             domain={gap ? ["auto", "auto"] : [0, 120]}
             width={58}
           />
           <Tooltip
             contentStyle={tooltip}
-            formatter={(v) => [`${Number(v).toFixed(1)} ${gap ? "pp" : "%"}`]}
+            formatter={(v) => [`${Number(v).toFixed(1)} ${gap ? localize("pp") : "%"}`]}
           />
           <Legend
             iconType="circle"
@@ -74,46 +101,48 @@ export function TrajectoryChart({
             y={gap ? 0 : 100}
             stroke="#63778b"
             strokeDasharray="5 5"
-            label={{
-              value: gap ? "No difference" : "Baseline",
+            label={localize({
+              value: localize(gap ? "No difference" : "Baseline"),
               position: "insideTopRight",
               fill: muted,
               fontSize: 10,
-            }}
+            })}
           />
-          {gap ? (
-            <Line
-              isAnimationActive={false}
-              name="Descriptive gap"
-              type="monotone"
-              dataKey="gap"
-              stroke="#f6bd69"
-              strokeWidth={3}
-              dot={{ r: 4 }}
-            />
-          ) : (
-            <>
+          {localize(
+            gap ? (
               <Line
                 isAnimationActive={false}
-                name="Measured strength"
-                type="monotone"
-                dataKey="strength"
-                stroke="#73e4d2"
+                name={localize("Descriptive gap")}
+                type="linear"
+                dataKey="gap"
+                stroke="#f6bd69"
                 strokeWidth={3}
                 dot={{ r: 4 }}
               />
-              <Line
-                isAnimationActive={false}
-                name="Functional mobility"
-                type="monotone"
-                dataKey="mobility"
-                stroke="#95a5ff"
-                strokeWidth={3}
-                dot={{ r: 4 }}
-              />
-            </>
+            ) : (
+              <>
+                <Line
+                  isAnimationActive={false}
+                  name={localize("Measured strength")}
+                  type="linear"
+                  dataKey="strength"
+                  stroke="#42e4ed"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                />
+                <Line
+                  isAnimationActive={false}
+                  name={localize("Functional mobility")}
+                  type="linear"
+                  dataKey="mobility"
+                  stroke="#ffb355"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                />
+              </>
+            ),
           )}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
@@ -136,11 +165,11 @@ export function AdherenceChart({
     <div
       className="chart short"
       role="img"
-      aria-label="Daily session adherence percent"
+      aria-label={localize("Daily session adherence percent")}
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid stroke={grid} vertical={false} />
+          <CartesianGrid stroke={grid} vertical={false} strokeDasharray="3 5" />
           <XAxis dataKey="day" stroke={muted} fontSize={10} />
           <YAxis unit="%" domain={[0, 100]} stroke={muted} fontSize={10} />
           <Tooltip
@@ -149,9 +178,9 @@ export function AdherenceChart({
           />
           <Bar
             isAnimationActive={false}
-            name="Completed / scheduled"
+            name={localize("Completed / scheduled")}
             dataKey="adherence"
-            fill="#73e4d2"
+            fill="#42e4ed"
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

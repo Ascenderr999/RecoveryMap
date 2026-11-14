@@ -6,6 +6,8 @@ export interface Assessment {
   metric: Metric;
   value: number;
   baseline?: boolean;
+  notes?: string;
+  protocol?: string;
 }
 export interface Profile {
   id: string;
@@ -33,6 +35,27 @@ export interface Session {
   notes: string;
   fatigue: number;
   discomfort: number;
+  planId?: string;
+}
+export interface PlanActivity {
+  id: string;
+  exercise: string;
+  instructions: string;
+  sets: string;
+  repetitions: string;
+  duration: string;
+  frequency: string;
+  schedule: string;
+  notes: string;
+}
+export interface RecoveryPlan {
+  id: string;
+  profileId: string;
+  title: string;
+  author: string;
+  sourceName: string;
+  importedAt: string;
+  activities: PlanActivity[];
 }
 export interface DemoState {
   version: number;
@@ -40,4 +63,5 @@ export interface DemoState {
   assessments: Assessment[];
   sessions: Session[];
   compact: boolean;
+  plans?: RecoveryPlan[];
 }

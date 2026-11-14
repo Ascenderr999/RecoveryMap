@@ -1,1 +1,6 @@
 * text=auto eol=lf
+*.pdf binary
+*.docx binary
+*.webp binary
+# Preserve the supplied reference source verbatim.
+design-reference/** -whitespace

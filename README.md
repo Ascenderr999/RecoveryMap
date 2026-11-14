@@ -1,19 +1,17 @@
 # RecoveryMap — RANGERS
 
-Autonomous Post-Landing Recovery Companion, built as a **NASA Space Apps 2026 hackathon demonstration** by team **RANGERS**. A responsive mission-control workspace for recording adherence to assigned recovery activities and comparing measured strength with functional performance after simulated Moon, Mars, and Earth landings.
+**Recovery Beyond Gravity.** An offline-first post-landing recovery companion for the NASA Space Apps Challenge 2026 hackathon. React application with profile-isolated local records, specialist-authored plan import, manual measurements, and transparent baseline comparisons. This is not a NASA-endorsed or clinically validated medical product.
 
-All three astronaut profiles, specialist identities, plans, and measurements are **fictional synthetic data**. No NASA astronaut records or CFT70 participant data are included. Plans demonstrate specialist-authored content within a fictional scenario; they are not real clinical prescriptions. RecoveryMap does not diagnose, prescribe, predict medical outcomes, or automatically adjust plans. NASA endorsement is not implied.
+## Development
 
-## Run locally
-
-Requires Node.js 22.12+ (Node 24 supported) and pnpm 11+. This workspace uses pnpm because npm is unavailable on the development machine.
+Requires Node.js 24 and pnpm 11. npm is not installed on the development machine.
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. If that port is busy, Vite prints the next available port.
+Open http://127.0.0.1:5173. Production checks and preview:
 
 ```sh
 pnpm test
@@ -21,47 +19,41 @@ pnpm build
 pnpm preview
 ```
 
-Production preview: **http://127.0.0.1:4173**. `pnpm build` runs TypeScript, builds the app, and prepares a revisioned offline asset cache. A Vercel SPA rewrite is included; use `pnpm build` and output directory `dist`. This milestone does not deploy the app.
+Preview: http://127.0.0.1:4173. Vercel uses `pnpm build`, output `dist`; SPA rewrites are included. A push to `main` may trigger the user's connected deployment, but pushing alone does not confirm deployment success.
 
-## Stack & structure
+## Implemented
 
-React 19, TypeScript, Vite, Tailwind CSS 3 plus custom design-system CSS, React Router, Recharts, Lucide React, Dexie/IndexedDB, Vitest, and fake-indexeddb. No backend, authentication, keys, external fonts, or telemetry. Rollup uses its official WebAssembly package through a pnpm override for compatibility with Windows Application Control.
+- **Reference design:** supplied `design-reference/RecoveryMap/style.css` reused in `src/styles/reference.css`, with selector and local asset/font adaptations. The exact supplied Earth asset is copied without recompression. The masthead, sidebar, profile, hero crop, card surfaces, navigation, and responsive behavior follow the supplied source. React-specific styles are in `bridge.css`. Fonts are bundled DM Sans and Manrope. Reduced-motion preferences are respected.
+- **Eight navigation pages:** Overview, Recovery Plan, Movement Tests, Recovery Gap Analysis, Exercise Library, Progress History, Reports, NASA & Sources. Profile/settings are also accessible through the sidebar and header.
+- **EN/AZ:** English defaults for new users. Language persists in `localStorage`. Central Azerbaijani dictionary: `src/i18n/az.json`. Switching changes presentation without remounting forms, changing profiles, or altering saved source text.
+- **Prompt 01:** CSV, TXT, text PDF, and DOCX import processed locally. Editable preview and explicit author/title requirements precede saving. All activity fields remain editable. Explicit comma-separated mission days activate the reviewed schedule; frequency prose is never automatically interpreted. Existing records remain intact. Image-only PDFs report that OCR is unavailable. File limit 15 MB; PDF limit 100 pages; plan limit 200 activities.
+- **Prompt 02:** force (N), mobility time (s), balance duration (s), coordination time (s), individual baselines, protocol IDs, dates, and notes. Profile-scoped charts and history update from saved values. Only observations matching each metric's baseline protocol are compared; charts pair strength and mobility on exact dates. Existing records without a protocol use `standard` for compatibility.
+- **Reports & preservation:** completion/skipping, session notes, adherence, exercise library, history, browser print, profile JSON/measurement CSV export, validated full backup/restore with confirmation, and confirmed demo reset.
+- **Prompt 03:** official NASA source links and bilingual scientific context. CFT70 participant files could not be accessed and validated; integration remains pending. No research participant values were invented or combined with demo profiles.
 
-- `src/types`: typed profile, assessment, session, and persisted-state models.
-- `src/data`: deterministic seeds and metric definitions.
-- `src/db`: atomic, idempotent initialization and persistence.
-- `src/hooks`: shared state and selected-profile data isolation.
-- `src/lib`: reproducible calculations and validation.
-- `src/components`, `src/layouts`, `src/pages`, `src/styles`: shared UI and six routes.
-- `public/sw.js`, `scripts/cache-assets.mjs`: offline app-shell support.
+## Import examples
 
-## Pages and interactions
+CSV headers: `exercise,instructions,sets,repetitions,duration,frequency,schedule,notes`. TXT can use `Exercise:`, `Instructions:`, `Sets:`, `Repetitions:`, `Duration:`, `Frequency:`, `Schedule:`, `Notes:`. Begin another `Exercise:` block for the next activity. Unstructured text stays as instructions and requires manual naming/review. Source fields remain in their authored language. PDF/DOCX layouts and tables may require manual correction; review against the original before scheduling.
 
-1. **Mission Control** — profile-specific mission context, calculated metrics, baseline chart, daily activities, and recent activity.
-2. **Recovery Plan** — fixed synthetic plan, daily schedule, complete/skip controls, fatigue/discomfort notes, and session history.
-3. **Functional Assessment** — explicit-unit manual entries for force, timed mobility, balance duration, and timed coordination; baseline and history tables.
-4. **Recovery Gap** — separate metric comparisons, paired-date strength/mobility trends, gap in percentage points, formulas, and limitations.
-5. **Progress & Reports** — adherence, timeline, notes, assessment history, and browser print layout.
-6. **Research & Settings** — primary research links, planned integration notice, profile/spacing settings, privacy, and confirmed reset.
+Small **synthetic parser fixtures**, including a no-text PDF, are in `docs/samples`. `scripts/generate-import-fixtures.py` regenerates them with Python's standard library. They are testing examples, not medical plans.
 
-Adherence = completed activities / all assigned activities due through the fixed demo day. Future activities are excluded. Strength baseline ratio = current / baseline × 100. Timed mobility baseline ratio = baseline / current × 100. The descriptive gap is strength change minus mobility change, in percentage points. Gap charts use **exact same-date pairs only**, without interpolation. Each metric/date may be entered once per profile; duplicate entries are rejected.
+## Data and calculations
 
-## Persistence, offline use & privacy
+Three fictional demo profiles — Alex Morgan, Maya Chen, Daniel Rivera — retain separate sessions, plans, baselines, and assessment history in IndexedDB through Dexie. Initialization is idempotent. New optional fields preserve existing database records. No backend, authentication, analytics, API keys, or remote processing is used. External source links open NASA websites. Do not enter sensitive personal health information in this hackathon prototype.
 
-Changes are saved in this browser's IndexedDB before the interface confirms them. Initialization seeds once. Profile records remain separate. Reset replaces all local records with synthetic defaults after confirmation. The demo date is fixed by profile; it is not live mission information.
+For higher-is-better force: `current / baseline × 100`. For lower-is-better timed mobility: `baseline / current × 100`. Recovery Gap is the difference in **percentage points** between the two baseline-relative ratios (equivalently, their changes). It is descriptive, not a clinical recovery percentage or validated risk score. No diagnostic thresholds, prescriptions, automatic intensity changes, or outcome predictions are generated.
 
-After a successful initial production visit and service-worker installation, the app shell and all route bundles are cached. Refresh once if needed to place the page under service-worker control. Development mode intentionally does not register the worker. Clearing site data or private browsing can remove local records. No personal health information should be entered. Opening external research links contacts those external websites.
+Adherence = completed / all assigned activities due through the fixed profile demo day. Skipped and pending activities remain in the denominator; future activities are excluded. Imported schedules are added only after explicit review.
 
-## Limitations and next milestones
+The service worker precaches the production route bundles, Earth asset, local fonts, and parser worker. Cache revisions include asset content; cleanup is restricted to RecoveryMap caches. A first online visit and a browser supporting service workers are required. Clearing site storage or using private browsing may remove records. Keep a downloaded backup when records matter.
 
-Technical input bounds are not physiological reference ranges. Measurements are manually entered; there is no medical-device integration. The gap is not a validated clinical score. There is no backend synchronization, user authentication, real specialist review, or cross-device backup. Sessions are seeded through demo day + 3 within an illustrative 30-day timeline.
+## Scientific sources and limits
 
-- **Prompt 01:** specialist-authored document import, provenance, review, and daily recovery workflow. Typed sessions and isolated persistence provide the foundation; import must preserve authorship and never generate prescriptions.
-- Later: evaluate NASA CFT70 integration with dataset permissions and protocol limitations; do not substitute analog data for astronaut evidence.
-- **Prompt 04:** advanced CSV/PDF export. Browser print is available now.
+- [NASA SM-204](https://humanresearchroadmap.nasa.gov/gaps/gap.aspx?i=695): post-landing self-administered assessment and rehabilitation research need.
+- [NASA CFT70](https://nlsp.nasa.gov/explore/data/details/933d244c-5967-54ee-90c6-ce560da2108d?dataType=DATASETS): Earth-based analog study, not Mars astronaut data; participant-level integration pending.
+- [NASA Human Research Program](https://www.nasa.gov/hrp/).
+- [NASA Open Science Data Repository](https://osdr.nasa.gov/bio/repo).
 
-Research references: [NASA CFT70 dataset](https://nlsp.nasa.gov/explore/data/details/933d244c-5967-54ee-90c6-ce560da2108d?dataType=DATASETS), [NASA Human Research Roadmap SM-204](https://humanresearchroadmap.nasa.gov/gaps/gap.aspx?i=695). **Research integration planned for a later milestone.**
+All seeded measurements and plans are synthetic; imported content and manual records have separate provenance. Import is a parsing/review workflow, not verification of authorship or medical suitability. Camera/device tracking, OCR, cloud sync, and clinical validation are not implemented. PDF output uses browser printing.
 
-## Verification record
-
-See [docs/verification.md](docs/verification.md) for executed checks and browser observations. Full offline browser operation and physical print/PDF output remain unverified. The service-worker lifecycle is covered by automated tests; browsers without service-worker support retain local records but require a connection to load the app shell.
+See [verification notes](docs/verification.md) for executed checks and known verification limits.

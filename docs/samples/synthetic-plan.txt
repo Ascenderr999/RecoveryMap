@@ -1,0 +1,8 @@
+Exercise: Synthetic test activity
+Instructions: Source instructions retained exactly.
+Sets: 2
+Repetitions: 8
+Duration: 30 seconds
+Frequency: As authored
+Schedule: 14,15
+Notes: Synthetic demonstration. Not medical advice.

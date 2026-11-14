@@ -1,3 +1,4 @@
+import { localize } from "../i18n";
 import { useState, type FormEvent } from "react";
 import { Plus, ScanLine } from "lucide-react";
 import { useProfileData } from "../hooks/useProfileData";
@@ -13,22 +14,49 @@ export default function Assessment() {
     [value, setValue] = useState(""),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
+  const [isBaseline, setIsBaseline] = useState(false),
+    [notes, setNotes] = useState("");
+  const [protocol, setProtocol] = useState(
+    baseline("strength")?.protocol ?? "standard",
+  );
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const err = validateAssessment(Number(value), date, metric, rows);
+    if (!protocol.trim()) {
+      setError("Enter a protocol identifier.");
+      return;
+    }
+    const err = validateAssessment(
+      Number(value),
+      date,
+      metric,
+      isBaseline
+        ? rows.filter((a) => !(a.metric === metric && a.baseline))
+        : rows,
+    );
     setError(err);
     setMessage("");
     if (err) return;
     const ok = await update((s) => ({
       ...s,
       assessments: [
-        ...s.assessments,
+        ...s.assessments.filter(
+          (a) =>
+            !(
+              isBaseline &&
+              a.profileId === p.id &&
+              a.metric === metric &&
+              a.baseline
+            ),
+        ),
         {
           id: `${p.id}-manual-${crypto.randomUUID()}`,
           profileId: p.id,
           date,
           metric,
           value: Number(value),
+          baseline: isBaseline,
+          notes,
+          protocol: protocol.trim(),
         },
       ],
     }));
@@ -40,41 +68,55 @@ export default function Assessment() {
   return (
     <>
       <PageTitle
-        label="MEASURE / RECORD / OBSERVE"
-        title="Functional Assessment"
-        description="Manual measurement entry. Your browser is not connected to medical devices."
+        label={localize("MEASURE / RECORD / OBSERVE")}
+        title={localize("Functional Assessment")}
+        description={localize(
+          "Manual measurement entry. Your browser is not connected to medical devices.",
+        )}
       />
       <div className="assessment-grid">
         <Panel
-          title="Record an assessment"
-          eyebrow="MANUAL ENTRY"
+          title={localize("Record an assessment")}
+          eyebrow={localize("MANUAL ENTRY")}
           action={<ScanLine className="teal" size={20} />}
         >
           <form onSubmit={(e) => void submit(e)} noValidate>
             <label>
-              Measurement type
+              {localize("Measurement type")}
               <select
                 value={metric}
                 onChange={(e) => {
                   setMetric(e.target.value as Metric);
+                  setProtocol(
+                    baseline(e.target.value as Metric)?.protocol ?? "standard",
+                  );
                   setError("");
                 }}
               >
-                {Object.entries(metricInfo).map(([key, m]) => (
-                  <option key={key} value={key}>
-                    {m.label} ({m.unit})
-                  </option>
-                ))}
+                {localize(
+                  Object.entries(metricInfo).map(([key, m]) => (
+                    <option key={key} value={key}>
+                      {localize(m.label)}
+                      {localize(" (")}
+                      {localize(m.unit)}
+                      {localize(")")}
+                    </option>
+                  )),
+                )}
               </select>
             </label>
             <p className="field-help">
-              {metricInfo[metric].direction}. Demonstration entry range: &gt; 0
-              to {metricInfo[metric].max} {metricInfo[metric].unit}; this is a
-              technical bound, not a clinical reference range.
+              {localize(metricInfo[metric].direction)}
+              {localize(". Demonstration entry range: > 0 to ")}
+              {localize(metricInfo[metric].max)}{" "}
+              {localize(metricInfo[metric].unit)}
+              {localize(
+                "; this is a technical bound, not a clinical reference range.",
+              )}
             </p>
             <div className="form-row">
               <label>
-                Assessment date
+                {localize("Assessment date")}
                 <input
                   type="date"
                   required
@@ -83,7 +125,9 @@ export default function Assessment() {
                 />
               </label>
               <label>
-                Measured value ({metricInfo[metric].unit})
+                {localize("Measured value (")}
+                {localize(metricInfo[metric].unit)}
+                {localize(")")}
                 <input
                   type="number"
                   required
@@ -92,50 +136,88 @@ export default function Assessment() {
                   step="any"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  placeholder={`Enter ${metricInfo[metric].unit}`}
+                  placeholder={localize(`Enter ${metricInfo[metric].unit}`)}
                 />
               </label>
             </div>
-            {error && (
-              <p role="alert" className="error-text">
-                {error}
-              </p>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={isBaseline}
+                onChange={(e) => setIsBaseline(e.target.checked)}
+              />
+              {localize(
+                "Save as individual baseline (replaces this metric's existing baseline)",
+              )}
+            </label>
+            <label>
+              {localize("Protocol identifier")}
+              <input
+                value={protocol}
+                maxLength={200}
+                onChange={(e) => setProtocol(e.target.value)}
+              />
+            </label>
+            <label>
+              {localize("Measurement notes")}
+              <textarea
+                value={notes}
+                maxLength={2000}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={localize("Record task setup and observations")}
+              />
+            </label>
+            <p className="field-help">
+              {localize(
+                "Use the same task, units, and protocol as the baseline. Comparisons describe measurements, not clinical readiness.",
+              )}
+            </p>
+            {localize(
+              error && (
+                <p role="alert" className="error-text">
+                  {localize(error)}
+                </p>
+              ),
             )}
             <button className="button primary" type="submit" disabled={saving}>
               <Plus size={16} />
-              {saving ? "Saving…" : "Save assessment"}
+              {localize(saving ? "Saving…" : "Save assessment")}
             </button>
             <p className="save-message" aria-live="polite">
-              {message}
+              {localize(message)}
             </p>
           </form>
         </Panel>
         <Panel
-          title="Pre-mission baselines"
-          eyebrow="SYNTHETIC REFERENCE VALUES"
+          title={localize("Pre-mission baselines")}
+          eyebrow={localize("INDIVIDUAL BASELINES / DEMO DEFAULTS")}
         >
           <div className="baseline-list">
-            {(Object.keys(metricInfo) as Metric[]).map((m) => (
-              <div key={m}>
-                <span>
-                  {metricInfo[m].label}
-                  <small>{baseline(m)?.date}</small>
-                </span>
-                <strong>
-                  {fmt(baseline(m)?.value)} <small>{metricInfo[m].unit}</small>
-                </strong>
-              </div>
-            ))}
+            {localize(
+              (Object.keys(metricInfo) as Metric[]).map((m) => (
+                <div key={m}>
+                  <span>
+                    {localize(metricInfo[m].label)}
+                    <small>{localize(baseline(m)?.date)}</small>
+                  </span>
+                  <strong>
+                    {localize(fmt(baseline(m)?.value))}{" "}
+                    <small>{localize(metricInfo[m].unit)}</small>
+                  </strong>
+                </div>
+              )),
+            )}
           </div>
           <p>
-            Baseline ratios describe changes in recorded measurements. They are
-            not estimates of clinical recovery or readiness.
+            {localize(
+              "Baseline ratios describe changes in recorded measurements. They are not estimates of clinical recovery or readiness.",
+            )}
           </p>
         </Panel>
       </div>
       <Panel
-        title="Assessment history"
-        eyebrow={`${p.name.toUpperCase()} / ISOLATED PROFILE RECORDS`}
+        title={localize("Assessment history")}
+        eyebrow={localize(`${p.name.toUpperCase()} / ISOLATED PROFILE RECORDS`)}
       >
         <AssessmentHistory rows={rows} />
       </Panel>
