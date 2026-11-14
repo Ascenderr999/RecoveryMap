@@ -8,6 +8,16 @@ import {
 } from "./calculations";
 import { createSeed, profiles } from "../data/seed";
 describe("descriptive baseline calculations", () => {
+  it("does not share a personal baseline across measurement environments", () => {
+    const rows = createSeed()
+      .assessments.filter((a) => a.profileId === "morgan")
+      .map((a) =>
+        a.metric === "strength" && !a.baseline
+          ? { ...a, environment: "Different gravity environment" }
+          : a,
+      );
+    expect(matchedTrend(rows)).toEqual([]);
+  });
   it("excludes observations that use a different protocol from their baseline", () => {
     const rows = createSeed()
       .assessments.filter((a) => a.profileId === "morgan")

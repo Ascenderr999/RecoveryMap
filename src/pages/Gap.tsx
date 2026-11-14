@@ -4,9 +4,13 @@ import { PageTitle, Panel, fmt } from "../components/ui";
 import { TrajectoryChart } from "../components/Charts";
 import { metricInfo } from "../data/seed";
 import { performance } from "../lib/calculations";
+import { useResearch } from "../research/ResearchContext";
+import { ResearchAnalysis } from "../research/ResearchViews";
 export default function Gap() {
+  const { selection } = useResearch();
   const { rows, trend, latest, baseline } = useProfileData();
   const pair = trend.at(-1);
+  if (selection.mode === "research") return <ResearchAnalysis />;
   return (
     <>
       <PageTitle

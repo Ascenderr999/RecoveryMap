@@ -48,6 +48,8 @@ export function parseBackup(text: string): DemoState {
         !date(a.date) ||
         (a.baseline !== undefined && typeof a.baseline !== "boolean") ||
         (a.notes !== undefined && !str(a.notes)) ||
+        (a.environment !== undefined &&
+          (!str(a.environment, 200) || !String(a.environment).trim())) ||
         (a.protocol !== undefined &&
           (!str(a.protocol, 200) || !String(a.protocol).trim())),
     )

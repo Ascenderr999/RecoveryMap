@@ -25,14 +25,22 @@ export function recoveryGap(
 export function baselineFor(rows: Assessment[], metric: Metric) {
   return rows.find((a) => a.metric === metric && a.baseline);
 }
+export function personalCompatible(a: Assessment, b: Assessment | undefined) {
+  return Boolean(
+    b &&
+    a.profileId === b.profileId &&
+    a.metric === b.metric &&
+    (a.protocol ?? "standard") === (b.protocol ?? "standard") &&
+    (a.environment ?? "Personal demo / unspecified gravity") ===
+      (b.environment ?? "Personal demo / unspecified gravity"),
+  );
+}
 export function latestFor(rows: Assessment[], metric: Metric) {
   const baseline = baselineFor(rows, metric);
   return rows
     .filter(
       (a) =>
-        a.metric === metric &&
-        !a.baseline &&
-        (a.protocol ?? "standard") === (baseline?.protocol ?? "standard"),
+        a.metric === metric && !a.baseline && personalCompatible(a, baseline),
     )
     .sort(
       (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id),
@@ -60,14 +68,14 @@ export function matchedTrend(rows: Assessment[]) {
             a.date === date &&
             a.metric === "strength" &&
             !a.baseline &&
-            (a.protocol ?? "standard") === (bs.protocol ?? "standard"),
+            personalCompatible(a, bs),
         ),
         m = rows.find(
           (a) =>
             a.date === date &&
             a.metric === "mobility" &&
             !a.baseline &&
-            (a.protocol ?? "standard") === (bm.protocol ?? "standard"),
+            personalCompatible(a, bm),
         );
       return s && m
         ? [

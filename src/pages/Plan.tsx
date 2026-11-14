@@ -4,11 +4,42 @@ import { useProfileData } from "../hooks/useProfileData";
 import { Panel, PageTitle, fmt, Empty } from "../components/ui";
 import { SessionCard } from "../components/SessionCard";
 import { PlanEditor } from "../components/PlanEditor";
+import { useSearchParams } from "react-router-dom";
+import Library from "./Library";
+import { useResearch } from "../research/ResearchContext";
+import { ResearchUnavailable } from "../research/ModeBar";
 export default function Plan() {
   const { p, sessions, stats } = useProfileData();
   const [day, setDay] = useState(p.day);
+  const { selection } = useResearch();
+  const [query, setQuery] = useSearchParams();
+  if (selection.mode === "research") return <><PageTitle title={localize('Recovery Plan')} label={localize('READ-ONLY RESEARCH')} description={localize('No participant recovery plan is present in these NASA files.')}/><ResearchUnavailable/></>;
+  const tabs = (
+    <div className="mode-tabs secondary-tabs">
+      <button
+        aria-pressed={query.get("tab") !== "library"}
+        onClick={() => setQuery({})}
+      >
+        {localize("Plan workflow")}
+      </button>
+      <button
+        aria-pressed={query.get("tab") === "library"}
+        onClick={() => setQuery({ tab: "library" })}
+      >
+        {localize("Exercise Library")}
+      </button>
+    </div>
+  );
+  if (query.get("tab") === "library")
+    return (
+      <>
+        {tabs}
+        <Library />
+      </>
+    );
   return (
     <>
+      {tabs}
       <PageTitle
         label={localize("ASSIGNED RECOVERY / DAILY WORKFLOW")}
         title={localize("Recovery Plan")}

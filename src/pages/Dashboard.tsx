@@ -4,7 +4,10 @@ import { useProfileData } from "../hooks/useProfileData";
 import { TrajectoryChart } from "../components/Charts";
 import { fmt } from "../components/ui";
 import { performance } from "../lib/calculations";
+import { useResearch } from "../research/ResearchContext";
+import { ResearchDashboard } from "../research/ResearchViews";
 export default function Dashboard() {
+  const { selection } = useResearch();
   const { p, rows, sessions, latest, baseline, trend, update, saving } =
     useProfileData();
   const today = sessions.filter((s) => s.day === p.day),
@@ -20,11 +23,12 @@ export default function Dashboard() {
       ? performance(mobility.value, baseMobility.value, false)
       : null;
   const pair = trend.at(-1);
+  if (selection.mode === "research") return <ResearchDashboard />;
   return (
     <>
       <div className="pagetitle">
         <div>
-          <h1>{localize("Every step is progress.")}</h1>
+          <h1>{localize("Mission Control")}</h1>
           <p className="sub">
             {localize(
               "Your recovery journey today. Moving closer to your goal, together.",

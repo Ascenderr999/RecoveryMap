@@ -17,19 +17,20 @@ import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import { profiles, dateFor } from "../data/seed";
 import { ProfileSelector } from "../components/ui";
 import { LanguageSwitcher, useLocale } from "../i18n";
+import { ModeBar } from "../research/ModeBar";
+import { useResearch } from "../research/ResearchContext";
 const links = [
-  ["/", "Overview", LayoutDashboard],
+  ["/", "Mission Control", LayoutDashboard],
   ["/plan", "Recovery Plan", ClipboardList],
-  ["/assessment", "Movement Tests", ScanLine],
-  ["/gap", "Recovery Gap Analysis", ChartNoAxesCombined],
-  ["/library", "Exercise Library", Dumbbell],
-  ["/history", "Progress History", History],
-  ["/reports", "Reports", FileChartColumn],
-  ["/research", "NASA & Sources", BookOpen],
+  ["/assessment", "Functional Assessment", ScanLine],
+  ["/gap", "Recovery Gap", ChartNoAxesCombined],
+  ["/reports", "Progress & Reports", FileChartColumn],
+  ["/research", "NASA Research & Settings", BookOpen],
 ] as const;
 export function AppLayout() {
   useLocale();
   const { state, saving } = useRecovery();
+  const { selection } = useResearch();
   const p = profiles.find((p) => p.id === state.selectedProfile)!;
   const { pathname } = useLocation();
   const offline = useOfflineStatus();
@@ -75,18 +76,32 @@ export function AppLayout() {
           {localize("Recovery")}
           <span>{localize("Map")}</span>
         </Link>
-        <div className="mission">
-          <span className="tiny">{localize("ACTIVE MISSION \u00B7 DEMO")}</span>
-          <strong>
-            {localize(p.code)}
-            {localize(" \u00B7")}
-            {localize(p.destination)}
-          </strong>
-          <span>
-            <i />
-            {localize(p.phase)}
-          </span>
-        </div>
+        {selection.mode === "personal" ? (
+          <div className="mission">
+            <span className="tiny">
+              {localize("ACTIVE MISSION \u00B7 DEMO")}
+            </span>
+            <strong>
+              {localize(p.code)}
+              {localize(" \u00B7")}
+              {localize(p.destination)}
+            </strong>
+            <span>
+              <i />
+              {localize(p.phase)}
+            </span>
+          </div>
+        ) : (
+          <div className="mission">
+            <span className="tiny">
+              {localize("REAL NASA EARTH-ANALOG DATA")}
+            </span>
+            <strong>CFT70 · ID {selection.participantId}</strong>
+            <span>
+              POST {selection.session} · {localize("Read only")}
+            </span>
+          </div>
+        )}
         <div className="navlabel">{localize("MISSION WORKSPACE")}</div>
         <nav>
           {localize(
@@ -95,7 +110,7 @@ export function AppLayout() {
                 <Icon className="navicon" size={19} />
                 {localize(label)}
                 {localize(
-                  to === "/plan" && (
+                  to === "/plan" && selection.mode === "personal" && (
                     <span className="badge">
                       {localize(
                         state.sessions.filter(
@@ -117,22 +132,37 @@ export function AppLayout() {
             </b>
             <small>{localize(offline)}</small>
           </div>
-          <div className="profile">
-            <span className="avatar">{localize(p.initials)}</span>
-            <div className="side-profile">
-              <ProfileSelector />
-              <small>
-                {localize("DEMO \u00B7")}
-                {localize(p.code)}
-                {localize(" \u00B7 Day")}
-                {localize(p.day)}
-              </small>
-              <small>{localize(p.phase)}</small>
+          {selection.mode === "personal" ? (
+            <div className="profile">
+              <span className="avatar">{localize(p.initials)}</span>
+              <div className="side-profile">
+                <ProfileSelector />
+                <small>
+                  {localize("DEMO \u00B7")}
+                  {localize(p.code)}
+                  {localize(" \u00B7 Day")}
+                  {localize(p.day)}
+                </small>
+                <small>{localize(p.phase)}</small>
+              </div>
+              <Link
+                to="/settings"
+                aria-label={localize("Profile and settings")}
+              >
+                <Settings size={16} />
+              </Link>
             </div>
-            <Link to="/settings" aria-label={localize("Profile and settings")}>
-              <Settings size={16} />
-            </Link>
-          </div>
+          ) : (
+            <div className="profile">
+              <span className="avatar">ID</span>
+              <div>
+                <b>CFT70 · {selection.participantId}</b>
+                <small>
+                  {localize("Research participant, not an astronaut profile")}
+                </small>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
       <div className={`workspace ${state.compact ? "compact" : ""}`}>
@@ -150,9 +180,17 @@ export function AppLayout() {
           <div className="headright">
             <span className="connection">
               <i />
-              {localize("Local data \u00B7 DEMO")}
+              {localize(
+                selection.mode === "research"
+                  ? "Real NASA Earth-analog data"
+                  : "Local data · DEMO",
+              )}
             </span>
-            <span className="date">{localize(dateFor(p, p.day))}</span>
+            <span className="date">
+              {selection.mode === "research"
+                ? `POST ${selection.session}`
+                : dateFor(p, p.day)}
+            </span>
             <LanguageSwitcher />
             <Link
               className="iconbutton"
@@ -164,6 +202,7 @@ export function AppLayout() {
           </div>
         </header>
         <main id="page">
+          <ModeBar />
           <Outlet />
         </main>
         <footer>

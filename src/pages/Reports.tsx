@@ -6,13 +6,50 @@ import { AdherenceChart } from "../components/Charts";
 import { AssessmentHistory } from "../components/AssessmentHistory";
 import { metricInfo, dateFor } from "../data/seed";
 import { download } from "../lib/backup";
+import {personalAssessmentCSV} from '../lib/personalExport';
+import { useSearchParams } from "react-router-dom";
+import History from "./History";
+import { useResearch } from "../research/ResearchContext";
+import { ResearchReports } from "../research/ResearchViews";
 export default function Reports() {
+  const { selection } = useResearch();
+  const [query, setQuery] = useSearchParams();
   const { p, rows, sessions, stats, state } = useProfileData();
   const notes = sessions
     .filter((s) => s.notes.trim())
     .sort((a, b) => b.day - a.day);
+  if (selection.mode === "research") return <ResearchReports />;
+  const tabs = (
+    <div className="mode-tabs secondary-tabs">
+      <button
+        aria-pressed={query.get("tab") !== "history"}
+        onClick={() => setQuery({})}
+      >
+        {localize("Progress summary")}
+      </button>
+      <button
+        aria-pressed={query.get("tab") === "history"}
+        onClick={() => setQuery({ tab: "history" })}
+      >
+        {localize("Progress History")}
+      </button>
+    </div>
+  );
+  if (query.get("tab") === "history")
+    return (
+      <>
+        {tabs}
+        <History />
+      </>
+    );
   return (
     <>
+      {tabs}
+      <div className="notice">
+        {localize(
+          "Activity completion records adherence, not proof of medical improvement.",
+        )}
+      </div>
       <PageTitle
         label={localize("OBSERVE / REVIEW / SHARE")}
         title={localize("Progress & Reports")}
@@ -56,36 +93,7 @@ export default function Reports() {
         <button
           className="button"
           onClick={() => {
-            const q = (v: unknown) =>
-              '"' +
-              String(v ?? "")
-                .replace(/^[=+@-]/, (m) => "'" + m)
-                .replace(/"/g, '""') +
-              '"';
-            const csv = [
-              [
-                "profile",
-                "date",
-                "metric",
-                "value",
-                "unit",
-                "baseline",
-                "source",
-                "notes",
-              ],
-              ...rows.map((a) => [
-                p.id,
-                a.date,
-                a.metric,
-                a.value,
-                metricInfo[a.metric].unit,
-                Boolean(a.baseline),
-                a.id.includes("-manual-") ? "Manual entry" : "Synthetic seed",
-                a.notes || "",
-              ]),
-            ]
-              .map((row) => row.map(q).join(","))
-              .join("\n");
+            const csv=personalAssessmentCSV(rows,p.id);
             download(
               `recoverymap-${p.id}-measurements.csv`,
               csv,

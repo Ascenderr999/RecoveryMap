@@ -7,7 +7,10 @@ import { AssessmentHistory } from "../components/AssessmentHistory";
 import { dateFor, metricInfo } from "../data/seed";
 import { validateAssessment } from "../lib/calculations";
 import type { Metric } from "../types";
+import { useResearch } from "../research/ResearchContext";
+import { ResearchObservations } from "../research/ResearchViews";
 export default function Assessment() {
+  const { selection, setSelection } = useResearch();
   const { p, rows, baseline, update, saving } = useProfileData();
   const [metric, setMetric] = useState<Metric>("strength"),
     [date, setDate] = useState(dateFor(p, p.day + 1)),
@@ -19,10 +22,13 @@ export default function Assessment() {
   const [protocol, setProtocol] = useState(
     baseline("strength")?.protocol ?? "standard",
   );
+  const [environment, setEnvironment] = useState(
+    baseline("strength")?.environment ?? "Personal demo / unspecified gravity",
+  );
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!protocol.trim()) {
-      setError("Enter a protocol identifier.");
+    if (!protocol.trim() || !environment.trim()) {
+      setError("Enter a protocol identifier and measurement environment.");
       return;
     }
     const err = validateAssessment(
@@ -57,6 +63,7 @@ export default function Assessment() {
           baseline: isBaseline,
           notes,
           protocol: protocol.trim(),
+          environment: environment.trim(),
         },
       ],
     }));
@@ -65,8 +72,44 @@ export default function Assessment() {
       setMessage("Assessment saved locally. Dashboard and reports updated.");
     }
   }
+  const tabs = (
+    <div className="mode-tabs secondary-tabs">
+      <button
+        aria-pressed={selection.mode === "personal"}
+        onClick={() => setSelection({ mode: "personal" })}
+      >
+        {localize("Manual personal assessment")}
+      </button>
+      <button
+        aria-pressed={selection.mode === "research"}
+        onClick={() => setSelection({ mode: "research" })}
+      >
+        {localize("Read-only NASA observations")}
+      </button>
+    </div>
+  );
+  if (selection.mode === "research")
+    return (
+      <>
+        {tabs}
+        <PageTitle
+          title={localize("Functional Assessment")}
+          label={localize("READ-ONLY RESEARCH")}
+          description={localize(
+            "Source phase, session, BR_Day, and original units are retained.",
+          )}
+        />
+        <ResearchObservations />
+      </>
+    );
   return (
     <>
+      {tabs}
+      <div className="notice">
+        {localize(
+          "Force requires an external measurement device; the browser does not measure N. Use a distinct protocol identifier for each mobility task. A personal timed task is not automatically the NASA slalom protocol.",
+        )}
+      </div>
       <PageTitle
         label={localize("MEASURE / RECORD / OBSERVE")}
         title={localize("Functional Assessment")}
@@ -87,6 +130,10 @@ export default function Assessment() {
                 value={metric}
                 onChange={(e) => {
                   setMetric(e.target.value as Metric);
+                  setEnvironment(
+                    baseline(e.target.value as Metric)?.environment ??
+                      "Personal demo / unspecified gravity",
+                  );
                   setProtocol(
                     baseline(e.target.value as Metric)?.protocol ?? "standard",
                   );
@@ -165,6 +212,14 @@ export default function Assessment() {
                 maxLength={2000}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={localize("Record task setup and observations")}
+              />
+            </label>
+            <label>
+              {localize("Measurement environment / gravity")}
+              <input
+                value={environment}
+                maxLength={200}
+                onChange={(e) => setEnvironment(e.target.value)}
               />
             </label>
             <p className="field-help">

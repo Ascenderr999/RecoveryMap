@@ -1,0 +1,339 @@
+.mode-bar {
+  border: 1px solid #3b6481;
+  border-radius: 9px;
+  background: linear-gradient(120deg, #0b263c, #071729);
+  padding: 16px 18px;
+  margin-bottom: 25px;
+}
+.mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mode-tabs button {
+  border: 1px solid #345773;
+  background: #0b1b2b;
+  border-radius: 5px;
+  padding: 10px 13px;
+  color: #91adc8;
+  font-size: 11px;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
+}
+.mode-tabs button[aria-pressed="true"] {
+  color: #c7ffff;
+  border-color: #42d9df;
+  background: #123a4a;
+}
+.mode-bar > p {
+  color: #91adc8;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 13px;
+}
+.research-selectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  margin-top: 15px;
+}
+.research-selectors label {
+  font-size: 10px;
+  margin: 0;
+  min-width: 130px;
+}
+.research-selectors select {
+  padding: 8px 10px;
+  margin-top: 5px;
+  min-width: 130px;
+  font-size: 12px;
+}
+.research-badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border: 1px solid #5a87ab;
+  background: #132e45;
+  color: #c0e1ff;
+  border-radius: 5px;
+}
+.secondary-tabs {
+  margin: 0 0 20px;
+}
+.research-intro {
+  padding: 22px 25px;
+  border: 1px solid #375f7e;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #0d2b42, #09192a);
+  margin-bottom: 20px;
+}
+.research-intro h2 {
+  font-size: 22px;
+  margin: 15px 0 10px;
+}
+.research-intro p {
+  color: #a6c0d4;
+  line-height: 1.9;
+  font-size: 12px;
+  max-width: 850px;
+}
+.research-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.research-metrics .statvalue {
+  font-size: 32px;
+  margin: 17px 0;
+}
+.research-metrics p {
+  color: #b6cede;
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 7px 0;
+}
+.research-metrics small {
+  color: #829eb6;
+  font-size: 10px;
+}
+.research-metrics .statvalue small {
+  font-size: 17px;
+  color: #b5d3e7;
+}
+.comparison-secondary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.comparison-secondary > div {
+  padding: 17px;
+  border: 1px solid #2e506c;
+  background: #0b2236;
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 13px;
+}
+.comparison-secondary span {
+  color: #9cb6cc;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.comparison-secondary strong {
+  font: 600 22px Manrope;
+  color: #d9ebf7;
+}
+.comparison-secondary + .chart-caption {
+  margin-bottom: 23px;
+}
+.research-limits {
+  border-top: 1px solid #36566d;
+  color: #9cb6cc;
+  font-size: 11px;
+  line-height: 1.9;
+  margin: 20px 0;
+  padding-top: 17px;
+}
+.source-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  margin: 10px 0 25px;
+}
+.source-summary strong {
+  font: 600 29px Manrope;
+  color: #b5eaf5;
+}
+.source-summary small {
+  display: block;
+  font: 10px "DM Sans";
+  color: #91adc8;
+  margin-top: 9px;
+}
+.hash-value {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font:
+    10px/1.9 Consolas,
+    monospace;
+  color: #b2cce0;
+  margin-top: 9px;
+  user-select: all;
+}
+.pagination {
+  margin-top: 18px;
+  gap: 15px;
+  color: #91adc8;
+  font-size: 11px;
+}
+.panel summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a8ddeb;
+}
+.panel > summary + .formula {
+  margin-top: 18px;
+}
+.source-info {
+  border-top: 1px solid #29465f;
+  padding-top: 12px;
+  font-size: 10px !important;
+}
+.research-intro .research-badge {
+  background: #0d243b;
+}
+.panel > p + .button {
+  margin-top: 16px;
+}
+.mode-tabs button:focus-visible {
+  outline: 2px solid #ffb355;
+  outline-offset: 3px;
+}
+.research-selectors .research-badge {
+  margin-right: auto;
+}
+.research-limits + .notice {
+  margin-top: 16px;
+}
+.source-summary + p + p {
+  margin-top: 16px;
+}
+code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .comparison-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .research-metrics .statvalue {
+    font-size: 27px;
+  }
+}
+@media (max-width: 760px) {
+  .mode-bar {
+    padding: 14px;
+  }
+  .mode-tabs {
+    gap: 7px;
+  }
+  .mode-tabs button {
+    font-size: 10px;
+    flex: 1;
+    padding: 10px 8px;
+    min-width: 120px;
+  }
+  .research-selectors {
+    gap: 12px;
+  }
+  .research-selectors .research-badge {
+    width: 100%;
+    text-align: center;
+  }
+  .research-selectors label {
+    flex: 1;
+    min-width: 110px;
+  }
+  .research-selectors select {
+    min-width: 0;
+    width: 100%;
+  }
+  .research-metrics {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .research-metrics .statvalue {
+    font-size: 30px;
+  }
+  .comparison-secondary {
+    gap: 10px;
+  }
+  .comparison-secondary > div {
+    padding: 13px;
+  }
+  .comparison-secondary strong {
+    font-size: 19px;
+  }
+  .research-intro {
+    padding: 20px;
+  }
+  .source-summary {
+    gap: 22px;
+  }
+  .source-summary strong {
+    font-size: 25px;
+  }
+  .research-limits {
+    font-size: 10px;
+  }
+  .secondary-tabs {
+    margin-bottom: 18px;
+  }
+  .research-selectors + .notice {
+    font-size: 10px;
+  }
+}
+@media print {
+  .mode-bar,
+  .secondary-tabs,
+  .pagination,
+  .research-selectors {
+    display: none !important;
+  }
+  .research-intro,
+  .research-metrics .stat,
+  .comparison-secondary > div {
+    background: white !important;
+    border-color: #aaa;
+    color: #123;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .research-intro p,
+  .research-metrics p,
+  .research-metrics small,
+  .comparison-secondary span,
+  .research-limits {
+    color: #345 !important;
+  }
+  .research-metrics .statvalue,
+  .comparison-secondary strong {
+    color: #123 !important;
+  }
+  .research-metrics .stat:after {
+    display: none;
+  }
+  .research-badge {
+    color: #123;
+    background: white;
+    border-color: #789;
+  }
+  .comparison-secondary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .research-limits {
+    break-inside: avoid;
+  }
+  .source-summary strong {
+    color: #123;
+  }
+  .source-summary small,
+  .hash-value {
+    color: #345;
+  }
+  .mode-tabs {
+    display: none !important;
+  }
+  .research-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  code {
+    word-break: break-all;
+  }
+}

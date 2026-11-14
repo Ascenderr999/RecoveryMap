@@ -8,6 +8,7 @@ export interface Assessment {
   baseline?: boolean;
   notes?: string;
   protocol?: string;
+  environment?: string;
 }
 export interface Profile {
   id: string;

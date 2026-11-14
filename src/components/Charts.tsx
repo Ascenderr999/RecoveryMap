@@ -91,7 +91,9 @@ export function TrajectoryChart({
           />
           <Tooltip
             contentStyle={tooltip}
-            formatter={(v) => [`${Number(v).toFixed(1)} ${gap ? localize("pp") : "%"}`]}
+            formatter={(v) => [
+              `${Number(v).toFixed(1)} ${gap ? localize("pp") : "%"}`,
+            ]}
           />
           <Legend
             iconType="circle"

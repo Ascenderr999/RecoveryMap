@@ -4,7 +4,8 @@ import { Check, SkipForward, ClipboardList } from "lucide-react";
 import type { Session } from "../types";
 import { useRecovery } from "../hooks/useRecovery";
 export function SessionCard({ session: s }: { session: Session }) {
-  const { update, saving } = useRecovery();
+  const { update, saving, state } = useRecovery();
+  const sourcePlan = state.plans?.find((plan) => plan.id === s.planId);
   const [notes, setNotes] = useState(s.notes),
     [fatigue, setFatigue] = useState(s.fatigue),
     [discomfort, setDiscomfort] = useState(s.discomfort),
@@ -31,6 +32,13 @@ export function SessionCard({ session: s }: { session: Session }) {
         <span className={`status ${s.status}`}>{localize(s.status)}</span>
       </div>
       <p>{s.planId ? s.description : localize(s.description)}</p>
+      {sourcePlan && (
+        <p className="source-info">
+          {localize("Source")}:{" "}
+          <span translate="no">{sourcePlan.sourceName}</span> ·{" "}
+          {localize("Upload does not authenticate a specialist plan.")}
+        </p>
+      )}
       <div className="dose">
         {localize("Assigned dose ")}
         <strong>{s.planId ? s.dose : localize(s.dose)}</strong>

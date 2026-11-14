@@ -107,14 +107,13 @@ export function PlanEditor() {
         day,
         exercise: a.exercise,
         description: a.instructions,
-        dose:
-          [
-            a.sets && `${a.sets} sets`,
-            a.repetitions && `${a.repetitions} repetitions`,
-            a.duration,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "See source instructions",
+        dose: [
+          a.sets && `${a.sets} sets`,
+          a.repetitions && `${a.repetitions} repetitions`,
+          a.duration,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         category: "Imported plan",
         status: "scheduled" as const,
         notes: a.notes,

@@ -1,7 +1,8 @@
 import { localize } from "./i18n";
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { ResearchProvider } from "./research/ResearchContext";
 import { RecoveryProvider, useRecovery } from "./hooks/useRecovery";
 import { AppLayout } from "./layouts/AppLayout";
 import { LocaleProvider, useLocale } from "./i18n";
@@ -21,9 +22,8 @@ import "@fontsource/manrope/latin-ext-800.css";
 import "@fontsource/manrope/latin-800.css";
 import "./styles/reference.css";
 import "./styles/bridge.css";
+import "./styles/research.css";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Library = lazy(() => import("./pages/Library"));
-const History = lazy(() => import("./pages/History"));
 const Plan = lazy(() => import("./pages/Plan"));
 const Assessment = lazy(() => import("./pages/Assessment"));
 const Gap = lazy(() => import("./pages/Gap"));
@@ -50,10 +50,16 @@ function Pages() {
           <Route path="reports" element={<Reports />} />
           <Route
             path="library"
-            element={<Library key={state.selectedProfile} />}
+            element={<Navigate to="/plan?tab=library" replace />}
           />
-          <Route path="history" element={<History />} />
-          <Route path="settings" element={<Research />} />
+          <Route
+            path="history"
+            element={<Navigate to="/reports?tab=history" replace />}
+          />
+          <Route
+            path="settings"
+            element={<Navigate to="/research?tab=settings" replace />}
+          />
           <Route path="research" element={<Research />} />
           <Route
             path="*"
@@ -75,7 +81,9 @@ createRoot(document.getElementById("root")!).render(
       <LocaleProvider>
         <BrowserRouter>
           <RecoveryProvider>
-            <Pages />
+            <ResearchProvider>
+              <Pages />
+            </ResearchProvider>
           </RecoveryProvider>
         </BrowserRouter>
       </LocaleProvider>

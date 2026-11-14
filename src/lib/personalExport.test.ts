@@ -1,0 +1,6 @@
+import {it,expect} from 'vitest';
+import Papa from 'papaparse';
+import {personalAssessmentCSV} from './personalExport';
+import {createSeed} from '../data/seed';
+it('keeps personal exports profile-isolated with units, protocols, environments, and baseline methods',()=>{const data=Papa.parse<Record<string,string>>(personalAssessmentCSV(createSeed().assessments,'morgan'),{header:true}).data;expect(data.every(r=>r.profileId==='morgan'&&r.sourceType==='synthetic_demo')).toBe(true);const force=data.find(r=>r.metric==='strength'&&r.date==='2026-11-14')!;expect(force.unit).toBe('N');expect(force.baselineMethod).toBe('Synthetic pre-mission reference');expect(force.protocol).toBe('standard');expect(Number(force.baselineRatioPct)).toBe(94);expect(data.some(r=>r.sourceType==='NASA_CFT70')).toBe(false);});
+it('does not export a comparison for a different personal environment',()=>{const rows=createSeed().assessments.map(r=>r.id==='morgan-strength-14'?{...r,environment:'Different gravity'}:r);const data=Papa.parse<Record<string,string>>(personalAssessmentCSV(rows,'morgan'),{header:true}).data;const r=data.find(r=>r.sourceRowId==='morgan-strength-14')!;expect(r.baselineRatioPct).toBe('');expect(r.comparisonUnavailableReason).toContain('incompatible');});

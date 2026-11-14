@@ -1,7 +1,11 @@
 import { localize } from "../i18n";
 import type { Assessment } from "../types";
 import { metricInfo } from "../data/seed";
-import { baselineFor, performance } from "../lib/calculations";
+import {
+  baselineFor,
+  performance,
+  personalCompatible,
+} from "../lib/calculations";
 import { fmt } from "./ui";
 export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
   return (
@@ -40,11 +44,10 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
                         a.baseline ? (
                           <span className="pill">{localize("Baseline")}</span>
                         ) : base ? (
-                          (a.protocol ?? "standard") ===
-                          (base.protocol ?? "standard") ? (
+                          personalCompatible(a, base) ? (
                             `${fmt(performance(a.value, base.value, metricInfo[a.metric].higher) ?? undefined)}% of baseline`
                           ) : (
-                            "Different protocol — no comparison"
+                            "Different protocol/environment — no comparison"
                           )
                         ) : (
                           "No baseline"
@@ -52,6 +55,7 @@ export function AssessmentHistory({ rows }: { rows: Assessment[] }) {
                       )}
                       <small className="table-detail" translate="no">
                         {a.protocol ?? "standard"}
+                        <br/>{a.environment??'Personal demo / unspecified gravity'}
                       </small>
                     </td>
                     <td>

@@ -4,3 +4,4 @@
 *.webp binary
 # Preserve the supplied reference source verbatim.
 design-reference/** -whitespace
+public/data/cft70/raw/*.csv -text whitespace=cr-at-eol

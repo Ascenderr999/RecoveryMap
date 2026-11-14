@@ -40,6 +40,7 @@ describe("offline app-shell lifecycle", () => {
       },
       fetch: async () => {
         if (!online) throw Error("offline");
+        if (online === "http-error") return new Response("Unavailable", { status: 503 });
         return new Response('<script src="/assets/main.js"></script>');
       },
       URL,
@@ -82,6 +83,8 @@ describe("offline app-shell lifecycle", () => {
       "cached bundle",
     );
     expect((await request("/unknown.js", "cors")).type).toBe("error");
+    online = "http-error";
+    expect(await (await request("/reports", "navigate")).text()).toContain("Cached app shell");
     let intercepted = false;
     handlers.fetch({
       request: { method: "POST", url: origin + "/anything" },
